@@ -1,10 +1,12 @@
-const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { Pool } = require("pg");
 require("dotenv").config();
-
+const express = require('express');
+//import authenticateToken from "./authMiddleware.js"; // Import the authentication middleware
+const authenticateToken = require('./authMiddleware').default
 const router = express.Router();
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
@@ -50,11 +52,25 @@ router.post("/login", async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.rows[0].password);
     if (!validPassword) return res.status(401).json({ error: "Invalid credentials" });
 
-    const token = jwt.sign({ id: user.rows[0].id }, SECRET_KEY, { expiresIn: "1h" });
-    res.json({ token, user: { id: user.rows[0].id, email: user.rows[0].email } });
+    // Include username in the JWT payload
+    const token = jwt.sign(
+      { id: user.rows[0].id, username: user.rows[0].username }, // Add username to the payload
+      SECRET_KEY,
+      { expiresIn: "1h" }
+    );
+
+    res.json({
+      token,
+      user: { id: user.rows[0].id, email: user.rows[0].email, username: user.rows[0].username }
+    });
   } catch (err) {
     res.status(500).json({ error: "Login failed" });
   }
+});
+
+
+router.get('/dashboard', authenticateToken, (req, res) => {
+  res.json({ message: 'Welcome to your dashboard', user: req.user });
 });
 
 module.exports = router;
