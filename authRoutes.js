@@ -51,9 +51,9 @@ router.post("/login", async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.rows[0].password);
     if (!validPassword) return res.status(401).json({ error: "Invalid credentials" });
 
-    // Include username in the JWT payload
+    // Include email in the JWT payload
     const token = jwt.sign(
-      { id: user.rows[0].id, username: user.rows[0].username }, // Add username to the payload
+      { id: user.rows[0].id, username: user.rows[0].username, email: user.rows[0].email }, // Add email to the payload
       SECRET_KEY,
       { expiresIn: "1h" }
     );
@@ -66,7 +66,6 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ error: "Login failed" });
   }
 });
-
 
 router.get('/dashboard', authenticateToken, (req, res) => {
   res.json({ message: 'Welcome to your dashboard', user: req.user });
