@@ -1,4 +1,4 @@
-const { Pool } = require('pg');
+const { Pool } = require("pg");
 
 console.log('Tentative de connexion à la base de données avec URL:', process.env.DATABASE_URL);
 

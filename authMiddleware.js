@@ -1,10 +1,12 @@
-import { verify } from 'jsonwebtoken';
-import { Pool } from 'pg';
+const jwt = require("jsonwebtoken");
+const { Pool } = require("pg");
+
 const SECRET_KEY = process.env.JWT_SECRET;
 
 // Middleware to authenticate JWT token
 const authenticateToken = async (req, res, next) => {
-  const token = req.header('Authorization')?.replace('Bearer ', ''); // Extract token from Authorization header
+  // Extract token from Authorization header
+  const token = req.header('Authorization')?.replace('Bearer ', ''); 
   if (!token) {
     return res.status(401).json({ error: 'Authentication required' });
   }
@@ -25,4 +27,4 @@ const authenticateToken = async (req, res, next) => {
   }
 };
 
-export default authenticateToken;
+module.exports = authenticateToken

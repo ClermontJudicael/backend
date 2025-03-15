@@ -3,8 +3,7 @@ const jwt = require("jsonwebtoken");
 const { Pool } = require("pg");
 require("dotenv").config();
 const express = require('express');
-//import authenticateToken from "./authMiddleware.js"; // Import the authentication middleware
-const authenticateToken = require('./authMiddleware').default
+const authenticateToken = require ('./authMiddleware')
 const router = express.Router();
 
 const pool = new Pool({
