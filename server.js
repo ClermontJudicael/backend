@@ -2,13 +2,16 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const eventRoutes = require('./routes/eventRoutes');
+const { authenticateToken } = require('./authMiddleware');
 const authRoutes = require('./authRoutes');
 const app = express();
 const port = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000'
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: 'http://localhost:5173', 
+  exposedHeaders: ['Content-Range', 'X-Total-Count']
 }));
 app.use(express.json());
 

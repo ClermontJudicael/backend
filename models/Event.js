@@ -84,6 +84,113 @@ class Event {
       }
     }
   }
+
+  static async createEvent(eventData) {
+    let client;
+    try {
+      console.log('Méthode createEvent appelée avec les données:', eventData);
+      client = await pool.connect();
+      
+      const { title, description, date, location, category, image_url, image_alt } = eventData;
+      
+      const query = `
+        INSERT INTO events (title, description, date, location, category, image_url, image_alt)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *
+      `;
+      
+      const values = [title, description, date, location, category, image_url || null, image_alt || null];
+      
+      console.log('Query SQL:', query);
+      console.log('Values:', values);
+      
+      const result = await client.query(query, values);
+      console.log('Événement créé:', result.rows[0]);
+      
+      return result.rows[0];
+    } catch (error) {
+      console.error('Erreur dans createEvent:', error);
+      throw new Error(`Erreur lors de la création de l'événement: ${error.message}`);
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
+  }
+
+  static async updateEvent(id, eventData) {
+    let client;
+    try {
+      console.log('Méthode updateEvent appelée avec ID:', id, 'et données:', eventData);
+      client = await pool.connect();
+      
+      // Construire la requête de mise à jour dynamiquement
+      let updateFields = [];
+      let values = [];
+      let paramIndex = 1;
+      
+      for (const [key, value] of Object.entries(eventData)) {
+        if (value !== undefined && !['id', 'created_at', 'updated_at'].includes(key)) {
+          updateFields.push(`${key} = $${paramIndex}`);
+          values.push(value);
+          paramIndex++;
+        }
+      }
+      
+      if (updateFields.length === 0) {
+        return await this.getEventById(id);
+      }
+      
+      values.push(id);
+      const query = `
+        UPDATE events
+        SET ${updateFields.join(', ')}
+        WHERE id = $${paramIndex}
+        RETURNING *
+      `;
+      
+      console.log('Query SQL:', query);
+      console.log('Values:', values);
+      
+      const result = await client.query(query, values);
+      console.log('Événement mis à jour:', result.rows[0]);
+      
+      return result.rows[0];
+    } catch (error) {
+      console.error('Erreur dans updateEvent:', error);
+      throw new Error(`Erreur lors de la mise à jour de l'événement: ${error.message}`);
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
+  }
+
+  static async deleteEvent(id) {
+    let client;
+    try {
+      console.log('Méthode deleteEvent appelée avec ID:', id);
+      client = await pool.connect();
+      
+      const query = 'DELETE FROM events WHERE id = $1 RETURNING *';
+      const values = [id];
+      
+      console.log('Query SQL:', query);
+      console.log('Values:', values);
+      
+      const result = await client.query(query, values);
+      console.log('Événement supprimé:', result.rows[0]);
+      
+      return result.rows[0];
+    } catch (error) {
+      console.error('Erreur dans deleteEvent:', error);
+      throw new Error(`Erreur lors de la suppression de l'événement: ${error.message}`);
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
+  }
 }
 
 module.exports = Event; 

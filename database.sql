@@ -1,76 +1,131 @@
+-- Schema pour la base de données du projet d'événements avec authentification distincte
+-- Utilisée par le backend pour les utilisateurs publics et les administrateurs
+
+-- Extension pour les UUID
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Table des utilisateurs
+-- Utilisée par l'authentification publique et l'authentification admin
 CREATE TABLE users (
-  id SERIAL PRIMARY KEY,
-  username VARCHAR(50) NOT NULL,
-  email VARCHAR(100) UNIQUE NOT NULL,
-  password TEXT NOT NULL
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(100) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'user', -- 'user', 'admin', 'organizer'
+    profile_image VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE,
+    CONSTRAINT valid_role CHECK (role IN ('user', 'admin', 'organizer'))
 );
 
+-- Table des sessions
+-- Pour gérer les sessions côté serveur si nécessaire
+CREATE TABLE sessions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    expires_at TIMESTAMP NOT NULL,
+    user_agent TEXT,
+    ip_address VARCHAR(45),
+    is_valid BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Table des événements
 CREATE TABLE events (
-  id SERIAL PRIMARY KEY,
-  title VARCHAR(255) NOT NULL,
-  description TEXT NOT NULL,
-  date TIMESTAMP NOT NULL,
-  location VARCHAR(255) NOT NULL,
-  category VARCHAR(50) NOT NULL,
-  image_url VARCHAR(255),
-  image_alt VARCHAR(255),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    date TIMESTAMP NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    image_url VARCHAR(255),
+    image_alt VARCHAR(255),
+    organizer_id INTEGER REFERENCES users(id),
+    max_attendees INTEGER,
+    is_published BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Création d'un trigger pour mettre à jour automatiquement updated_at
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
+-- Table des tickets
+CREATE TABLE tickets (
+    id SERIAL PRIMARY KEY,
+    event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    type VARCHAR(100) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    available_quantity INTEGER NOT NULL,
+    purchase_limit INTEGER DEFAULT 10,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_event FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+);
 
-CREATE TRIGGER update_events_updated_at
-    BEFORE UPDATE ON events
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+-- Table des réservations
+CREATE TABLE reservations (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    ticket_id INTEGER NOT NULL REFERENCES tickets(id),
+    quantity INTEGER NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending', -- 'pending', 'confirmed', 'canceled'
+    payment_id VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT fk_ticket FOREIGN KEY (ticket_id) REFERENCES tickets(id),
+    CONSTRAINT valid_status CHECK (status IN ('pending', 'confirmed', 'canceled'))
+);
 
--- Insertion des événements avec images
-INSERT INTO events (title, description, date, location, category, image_url, image_alt) VALUES
-  ('Concert de Jazz 1',
-   'Un super concert de jazz avec les meilleurs artistes',
-   '2024-04-01 20:00:00',
-   'Salle de Concert',
-   'concert',
-   '/images/events/jazz.jpg',
-   'Concert de jazz avec des musiciens sur scène'),
-  
-  ('Match de Football 2',
-   'Finale du championnat local de football',
-   '2024-05-15 15:00:00',
-   'Stade Municipal',
-   'sport',
-   '/images/events/foot.jpg',
-   'Match de football en cours'),
-  
-  ('Pièce de Théâtre 3',
-   'Une représentation exceptionnelle de "Le Misanthrope"',
-   '2024-06-20 19:30:00',
-   'Théâtre Municipal',
-   'theatre',
-   '/images/events/jazz.jpg',
-   'Scène de théâtre avec les acteurs'),
-  
-  ('Exposition d''Art Contemporain 4',
-   'Découvrez les œuvres des artistes locaux',
-   '2024-07-10 10:00:00',
-   'Galerie d''Art',
-   'exposition',
-   '/images/events/jazz.jpg',
-   'Exposition d''art contemporain'),
-   
-   ('Match de Football 5',
-   'Finale du championnat local de football',
-   '2024-05-15 15:00:00',
-   'Stade Municipal',
-   'sport',
-   '/images/events/foot.jpg',
-   'Match de football en cours')
-  ;
+-- Table pour l'historique des opérations admin
+CREATE TABLE admin_logs (
+    id SERIAL PRIMARY KEY,
+    admin_id INTEGER NOT NULL REFERENCES users(id),
+    action VARCHAR(100) NOT NULL,
+    entity_type VARCHAR(50) NOT NULL,
+    entity_id INTEGER,
+    details JSONB,
+    ip_address VARCHAR(45),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_admin FOREIGN KEY (admin_id) REFERENCES users(id)
+);
+
+-- Données initiales pour les utilisateurs
+INSERT INTO users (username, email, password, role)
+VALUES
+    ('admin', 'admin@example.com', '$2a$10$qnz.t4UrZ0eS1NuU17jZR.ZTQtqYhXSMo1aK7t3KF.Y/iO4i8Xpxy', 'admin'), -- 'radokely'
+    ('organizer', 'organizer@example.com', '$2a$10$lPGAeg2c2FRBqT5K.5Byn.31qgJQV0LKxKDwZK.Rt40m77zIE1sTG', 'organizer'), -- 'organisateur'
+    ('user', 'user@example.com', '$2a$10$f6Q18iVJbPj/WZJnJvKmH.qc76qY/nux9HylIsPhWiLVIVH1ZuySa', 'user'); -- 'user'
+
+-- Données initiales pour les événements
+INSERT INTO events (title, description, date, location, category, image_url, organizer_id, is_published)
+VALUES
+    ('Concert de Jazz', 'Un concert de jazz avec les meilleurs musiciens locaux', '2024-06-15 19:00:00', 'Salle Apollo, Paris', 'Musique', '/images/jazz.jpg', 2, TRUE),
+    ('Exposition d''Art Moderne', 'Découvrez les œuvres d''artistes contemporains', '2024-07-10 10:00:00', 'Galerie Moderna, Lyon', 'Art', '/images/art.jpg', 2, TRUE);
+
+-- Données initiales pour les tickets
+INSERT INTO tickets (event_id, type, price, available_quantity, purchase_limit)
+VALUES
+    (1, 'VIP', 100.00, 50, 2),
+    (1, 'Standard', 50.00, 100, 5),
+    (2, 'Early Bird', 30.00, 200, 10);
+
+-- Données initiales pour les réservations
+INSERT INTO reservations (user_id, ticket_id, quantity, status)
+VALUES
+    (3, 1, 2, 'confirmed'),
+    (3, 3, 4, 'confirmed');
+
+-- Indexes pour améliorer les performances
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_events_date ON events(date);
+CREATE INDEX idx_events_category ON events(category);
+CREATE INDEX idx_tickets_event_id ON tickets(event_id);
+CREATE INDEX idx_reservations_user_id ON reservations(user_id);
+CREATE INDEX idx_reservations_ticket_id ON reservations(ticket_id);
+CREATE INDEX idx_sessions_token ON sessions(token);
+CREATE INDEX idx_sessions_user_id ON sessions(user_id);
