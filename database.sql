@@ -96,7 +96,7 @@ CREATE TABLE admin_logs (
 -- Données initiales pour les utilisateurs
 INSERT INTO users (username, email, password, role)
 VALUES
-    ('admin', 'admin@example.com', '$2a$10$qnz.t4UrZ0eS1NuU17jZR.ZTQtqYhXSMo1aK7t3KF.Y/iO4i8Xpxy', 'admin'), -- 'radokely'
+    ('admin', 'admin@example.com', '$2b$10$TeZjXWkKh2uYLgGa7nFNJekmERgTwrXF8YPHe0NTR4hEUc/E.wmRS', 'admin'), -- 'radokely'
     ('organizer', 'organizer@example.com', '$2a$10$lPGAeg2c2FRBqT5K.5Byn.31qgJQV0LKxKDwZK.Rt40m77zIE1sTG', 'organizer'), -- 'organisateur'
     ('user', 'user@example.com', '$2a$10$f6Q18iVJbPj/WZJnJvKmH.qc76qY/nux9HylIsPhWiLVIVH1ZuySa', 'user'); -- 'user'
 
