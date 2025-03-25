@@ -1,67 +1,64 @@
 const { Pool } = require("pg");
-const bcrypt = require("bcryptjs");
+
+console.log('Tentative de connexion à la base de données avec URL:', process.env.DATABASE_URL);
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// Data temporaires - à remplacer par des requêtes à la BDD
-const users = [
-  {
-    id: 1,
-    username: 'admin',
-    email: 'admin@example.com',
-    password: 'radokely', // 'password'
-    role: 'admin'
-  },
-  {
-    id: 2,
-    username: 'organizer',
-    email: 'organizer@example.com',
-    password: 'organisateur', // 'password'
-    role: 'organizer'
-  },
-  {
-    id: 3,
-    username: 'user',
-    email: 'user@example.com',
-    password: 'user', // 'password'
-    role: 'user'
+// Test de la connexion
+pool.connect((err, client, release) => {
+  if (err) {
+    console.error('Erreur de connexion à la base de données:', err);
+  } else {
+    console.log('Connexion à la base de données réussie');
+    release();
   }
-];
+});
 
 class User {
-  static async findByUsername(username) {
-    // Temporaire - à remplacer par requête SQL
-    return users.find(u => u.username === username);
-  }
+  static async getAllUsers(filters = {}) {
+    let client;
+    try {
+      console.log('Méthode getAllUsers appelée avec les filtres:', filters);
+      
+      client = await pool.connect();
+      let query = 'SELECT * FROM users WHERE 1=1'; 
+      const values = [];
 
-  static async findById(id) {
-    // Temporaire - à remplacer par requête SQL
-    return users.find(u => u.id === parseInt(id));
-  }
+      // Ne traiter que les filtres qui ont une valeur valide
+      if (filters.name && filters.name !== 'null') {
+        query += ' AND name ILIKE $' + (values.length + 1);
+        values.push(`%${filters.name}%`);
+      }
 
-  static async getAllUsers() {
-    // Temporaire - à remplacer par requête SQL
-    return users.map(({ password, ...user }) => user);
-  }
+      if (filters.email && filters.email !== 'null') {
+        query += ' AND email ILIKE $' + (values.length + 1);
+        values.push(`%${filters.email}%`);
+      }
 
-  static async updateUser(id, userData) {
-    // Temporaire - à remplacer par requête SQL
-    const userIndex = users.findIndex(u => u.id === parseInt(id));
-    if (userIndex === -1) return null;
-    
-    users[userIndex] = {
-      ...users[userIndex],
-      ...userData,
-      id: parseInt(id), // Conserver l'ID original
-      password: users[userIndex].password // Ne pas permettre de modifier le mot de passe via cette route
-    };
-    
-    const { password, ...safeUser } = users[userIndex];
-    return safeUser;
+      // Ajoutez d'autres filtres si nécessaire
+
+      query += ' ORDER BY id ASC'; 
+      
+      console.log('Query SQL:', query);
+      console.log('Values:', values);
+
+      const result = await client.query(query, values);
+      console.log('Résultat de la requête:', result.rows);
+      
+      return result.rows;
+    } catch (error) {
+      console.error('Erreur dans getAllUsers:', error);
+      throw new Error(`Erreur lors de la récupération des utilisateurs: ${error.message}`);
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
   }
 }
+
 
 module.exports = User; 

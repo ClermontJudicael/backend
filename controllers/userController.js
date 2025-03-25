@@ -1,4 +1,4 @@
-/** 
+
 const User = require('../models/User');
 
 // Liste de tous les utilisateurs
@@ -75,4 +75,3 @@ module.exports = {
   getUserById,
   updateUser
 }; 
-*/

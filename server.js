@@ -4,6 +4,7 @@ const cors = require('cors');
 const eventRoutes = require('./routes/eventRoutes');
 const { authenticateToken } = require('./authMiddleware');
 const authRoutes = require('./authRoutes');
+const userRoutes = require('./routes/userRoutes');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -12,6 +13,8 @@ app.use(cors({
   origin: ['http://localhost:3000', 'http://localhost:5173'],
   exposedHeaders: ['Content-Range', 'X-Total-Count']
 }));
+
+// pour parser le json
 app.use(express.json());
 
 // Logging middleware
@@ -25,6 +28,9 @@ app.use('/api/auth', authRoutes);
 
 // Add event routes
 app.use('/api/events', eventRoutes);
+
+app.use('/api/users', userRoutes);
+
 
 // Test route
 app.get('/api/test', (req, res) => {
