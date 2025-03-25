@@ -2,11 +2,14 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const eventRoutes = require('./routes/eventRoutes');
-const { authenticateToken } = require('./authMiddleware');
-const authRoutes = require('./authRoutes');
+const { authenticateToken } = require('./middlewares/authMiddleware');
+const authRoutes = require('./middlewares/authRoutes');
 const app = express();
 const port = process.env.PORT || 5000;
+const healthRoutes = require('./routes/healthRoutes');
 
+// Après l'initialisation d'Express
+app.use('/api', healthRoutes);
 // Middleware
 app.use(cors({
   origin: ['http://localhost:3000', 'http://localhost:5173'],

@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
-const authenticateToken = require('../authMiddleware');
+const authenticateToken = require('../middlewares/authMiddleware');
 
 // Liste de tous les utilisateurs (admin uniquement)
 router.get('/', authenticateToken, userController.getAllUsers);

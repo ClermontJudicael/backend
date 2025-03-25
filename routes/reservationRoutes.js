@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const reservationController = require('../controllers/reservationController');
-const authenticateToken = require('../authMiddleware');
+const authenticateToken = require('../middlewares/authMiddleware');
 
 // Liste de toutes les réservations (admin uniquement)
 router.get('/', authenticateToken, reservationController.getAllReservations);

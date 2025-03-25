@@ -11,7 +11,7 @@ CREATE TABLE users (
     username VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
-    role VARCHAR(20) NOT NULL DEFAULT 'user', -- 'user', 'admin', 'organizer'
+    role VARCHAR(20) NOT NULL DEFAULT 'user',
     profile_image VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -79,6 +79,36 @@ CREATE TABLE reservations (
     CONSTRAINT fk_ticket FOREIGN KEY (ticket_id) REFERENCES tickets(id),
     CONSTRAINT valid_status CHECK (status IN ('pending', 'confirmed', 'canceled'))
 );
+
+--table recus
+-- Table des reçus
+CREATE TABLE receipts (
+                          id SERIAL PRIMARY KEY,
+                          reservation_id INTEGER NOT NULL REFERENCES reservations(id) ON DELETE CASCADE,
+                          user_id INTEGER NOT NULL REFERENCES users(id),
+                          ticket_id INTEGER NOT NULL REFERENCES tickets(id),
+                          qr_code TEXT NOT NULL, -- Stockage du QR code en base64 ou URL
+                          pdf_url VARCHAR(255), -- Chemin vers le PDF stocké
+                          amount DECIMAL(10, 2) NOT NULL,
+                          payment_method VARCHAR(50),
+                          payment_status VARCHAR(20) NOT NULL DEFAULT 'completed', -- 'pending', 'completed', 'failed'
+                          issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                          CONSTRAINT fk_reservation FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE CASCADE,
+                          CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id),
+                          CONSTRAINT fk_ticket FOREIGN KEY (ticket_id) REFERENCES tickets(id),
+                          CONSTRAINT valid_payment_status CHECK (payment_status IN ('pending', 'completed', 'failed'))
+);
+
+-- Index pour optimiser les requêtes
+CREATE INDEX idx_receipts_reservation_id ON receipts(reservation_id);
+CREATE INDEX idx_receipts_user_id ON receipts(user_id);
+CREATE INDEX idx_receipts_ticket_id ON receipts(ticket_id);
+
+-- Données initiales pour les reçus (exemple)
+INSERT INTO receipts (reservation_id, user_id, ticket_id, qr_code, pdf_url, amount, payment_method, payment_status)
+VALUES
+    (1, 3, 1, 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...', '/receipts/receipt_1.pdf', 200.00, 'credit_card', 'completed'),
+    (2, 3, 3, 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...', '/receipts/receipt_2.pdf', 120.00, 'paypal', 'completed');
 
 -- Table pour l'historique des opérations admin
 CREATE TABLE admin_logs (
