@@ -112,10 +112,34 @@ const createUser = async (req, res) => {
   }
 };
 
+const deleteUser = async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+
+    // Seul un admin peut supprimer un utilisateur
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Non autorisé. Rôle d\'administrateur requis.' });
+    }
+
+    const deletedUser = await User.deleteUser(userId);
+
+    if (!deletedUser) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    }
+
+    res.json({ message: 'Utilisateur supprimé avec succès' });
+  
+  } catch (error) {
+    console.error('Erreur dans deleteUser:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getAllUsers,
   getUserById,
   updateUser,
-  createUser // Ajoutez createUser à l'export
+  createUser, 
+  deleteUser
 };
 

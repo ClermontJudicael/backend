@@ -93,6 +93,24 @@ CREATE TABLE admin_logs (
     CONSTRAINT fk_admin FOREIGN KEY (admin_id) REFERENCES users(id)
 );
 
+-- Supprimer la contrainte existante
+ALTER TABLE reservations
+DROP CONSTRAINT fk_user;
+
+-- Ajouter la contrainte avec ON DELETE CASCADE
+ALTER TABLE reservations
+ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE reservations
+DROP CONSTRAINT reservations_user_id_fkey;
+
+ALTER TABLE reservations
+DROP CONSTRAINT fk_user,
+ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+
+
+
 -- Données initiales pour les utilisateurs
 INSERT INTO users (username, email, password, role)
 VALUES

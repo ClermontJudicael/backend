@@ -134,6 +134,22 @@ class User {
       }
     }
   }
+
+  static async deleteUser(id) {
+    let client;
+    try {
+      client = await pool.connect();
+      const result = await client.query('DELETE FROM users WHERE id = $1', [id]);
+      return result.rowCount > 0; // Retourne true si un utilisateur a été supprimé, sinon false
+    } catch (error) {
+      console.error('Erreur dans deleteUser:', error);
+      throw new Error(`Erreur lors de la suppression de l'utilisateur: ${error.message}`);
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
+  }
 }
 
 
