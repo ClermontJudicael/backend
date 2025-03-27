@@ -74,6 +74,25 @@ class User {
       }
     }
   }
+
+  static async updateUser(id, updatedUser) {
+    let client;
+    try {
+      client = await pool.connect();
+      const result = await client.query(
+        'UPDATE users SET username = $1, email = $2, role = $3 WHERE id = $4 RETURNING *',
+        [updatedUser.username, updatedUser.email, updatedUser.role, id]
+      );
+      return result.rows[0];
+    } catch (error) {
+      console.error('Erreur dans updateUser:', error);
+      throw new Error(`Erreur lors de la mise à jour de l'utilisateur: ${error.message}`);
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
+  }
 }
 
 

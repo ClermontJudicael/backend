@@ -56,7 +56,17 @@ const updateUser = async (req, res) => {
     if (req.user.role !== 'admin' && req.user.id !== userId) {
       return res.status(403).json({ message: 'Non autorisé' });
     }
-    
+
+    // Validation des données d'entrée
+    const { username, email, role } = req.body;
+    if (!username && !email && !role) {
+      return res.status(400).json({ message: 'Aucune donnée à mettre à jour' });
+    }
+
+    // Log des données que vous essayez de mettre à jour
+    console.log('Données à mettre à jour:', { userId, username, email, role });
+
+    // Appel à la méthode updateUser du modèle
     const updatedUser = await User.updateUser(userId, req.body);
     
     if (!updatedUser) {
