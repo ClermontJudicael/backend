@@ -1,4 +1,5 @@
 const { Pool } = require("pg");
+const bcrypt = require('bcrypt'); 
 
 console.log('Tentative de connexion à la base de données avec URL:', process.env.DATABASE_URL);
 
@@ -87,6 +88,46 @@ class User {
     } catch (error) {
       console.error('Erreur dans updateUser:', error);
       throw new Error(`Erreur lors de la mise à jour de l'utilisateur: ${error.message}`);
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
+  }
+
+  static async findByEmail(email) {
+    let client;
+    try {
+      client = await pool.connect();
+      const result = await client.query('SELECT * FROM users WHERE email = $1', [email]);
+      return result.rows[0]; // Retourne l'utilisateur trouvé ou undefined si aucun utilisateur n'est trouvé
+    } catch (error) {
+      console.error('Erreur dans findByEmail:', error);
+      throw new Error(`Erreur lors de la recherche de l'utilisateur par email: ${error.message}`);
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
+  }
+
+  static async createUser({ username, email, password, role = 'user' }) {
+    let client;
+    try {
+      client = await pool.connect();
+
+      // Hachage du mot de passe avant de l'enregistrer
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const result = await client.query(
+        'INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4) RETURNING *',
+        [username, email, hashedPassword, role]
+      );
+
+      return result.rows[0]; // Retourne l'utilisateur créé
+    } catch (error) {
+      console.error('Erreur dans createUser:', error);
+      throw new Error(`Erreur lors de la création de l'utilisateur: ${error.message}`);
     } finally {
       if (client) {
         client.release();

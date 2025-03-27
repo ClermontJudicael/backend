@@ -16,6 +16,8 @@ router.get('/:id', authenticateToken, userController.getUserById);
 // Modifier un utilisateur
 router.put('/:id', authenticateToken, userController.updateUser);
 
+router.post('/', authenticateToken, userController.createUser);
+
 // Réservations d'un utilisateur
 router.get('/:id/reservations', authenticateToken, require('../controllers/reservationController').getReservationsByUserId);
 
