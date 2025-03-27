@@ -30,8 +30,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 
 app.use('/api/users', userRoutes);
-
-
 // Test route
 app.get('/api/test', (req, res) => {
   res.json({ message: 'API is working!' });

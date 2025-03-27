@@ -58,6 +58,22 @@ class User {
       }
     }
   }
+
+  static async findById(id) {
+    let client;
+    try {
+      client = await pool.connect();
+      const result = await client.query('SELECT * FROM users WHERE id = $1', [id]);
+      return result.rows[0];
+    } catch (error) {
+      console.error('Erreur dans getUserById:', error);
+      throw new Error(`Erreur lors de la récupération de l'utilisateur: ${error.message}`);
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
+  }
 }
 
 
