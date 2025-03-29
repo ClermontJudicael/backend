@@ -147,3 +147,14 @@ CREATE INDEX idx_reservations_user_id ON reservations(user_id);
 CREATE INDEX idx_reservations_ticket_id ON reservations(ticket_id);
 CREATE INDEX idx_sessions_token ON sessions(token);
 CREATE INDEX idx_sessions_user_id ON sessions(user_id);
+
+
+-- Insertion de réservations pour différents utilisateurs et tickets
+INSERT INTO reservations (user_id, ticket_id, quantity, status)
+VALUES
+    (1, 1, 1, 'confirmed'),  -- L'utilisateur avec id 1 réserve 1 ticket VIP pour l'événement 1
+    (1, 2, 2, 'pending'),    -- L'utilisateur avec id 1 réserve 2 tickets Standard pour l'événement 1 (en attente)
+    (2, 3, 1, 'confirmed'),  -- L'utilisateur avec id 2 réserve 1 ticket Early Bird pour l'événement 2
+    (2, 2, 5, 'pending'),    -- L'utilisateur avec id 2 réserve 5 tickets Standard pour l'événement 1 (en attente)
+    (1, 3, 2, 'confirmed');  -- L'utilisateur avec id 1 réserve 2 tickets Early Bird pour l'événement 2
+

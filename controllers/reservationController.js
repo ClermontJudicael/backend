@@ -19,7 +19,7 @@ const getAllReservations = async (req, res) => {
     
     // Ajouter des détails sur les tickets et événements
     const detailedReservations = await Promise.all(allReservations.map(async (reservation) => {
-      const ticket = await Ticket.getTicketById(reservation.ticket_id);
+      const ticket = await Ticket.findById(reservation.ticket_id);
       let event = null;
       if (ticket) {
         event = await Event.getEventById(ticket.event_id);
@@ -78,7 +78,7 @@ const getReservationsByUserId = async (req, res) => {
     
     // Ajouter des détails sur les tickets et événements
     const detailedReservations = await Promise.all(userReservations.map(async (reservation) => {
-      const ticket = await Ticket.getTicketById(reservation.ticket_id);
+      const ticket = await Ticket.findById(reservation.ticket_id);
       let event = null;
       if (ticket) {
         event = await Event.getEventById(ticket.event_id);
@@ -119,7 +119,7 @@ const cancelReservation = async (req, res) => {
     const updatedReservation = await Reservation.cancelReservation(reservationId);
     
     // Augmenter la quantité disponible du ticket
-    const ticket = await Ticket.getTicketById(reservation.ticket_id);
+    const ticket = await Ticket.findById(reservation.ticket_id);
     if (ticket) {
       await Ticket.updateTicket(ticket.id, {
         available_quantity: ticket.available_quantity + reservation.quantity

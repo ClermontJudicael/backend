@@ -112,7 +112,9 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
 });
 
 // Routes pour les tickets d'un événement
+console.log(ticketController.getTicketsByEventId); // Cela devrait afficher la fonction ou undefined
 router.get('/:id/tickets', ticketController.getTicketsByEventId);
+
 
 // Routes pour les réservations d'un événement
 router.get('/:id/reservations', authenticateToken, reservationController.getReservationsByEventId);

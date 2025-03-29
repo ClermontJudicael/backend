@@ -5,6 +5,8 @@ const eventRoutes = require('./routes/eventRoutes');
 const { authenticateToken } = require('./authMiddleware');
 const authRoutes = require('./authRoutes');
 const userRoutes = require('./routes/userRoutes');
+const reservationRoutes = require('./routes/reservationRoutes');
+const ticketRoutes = require('./routes/ticketRoutes');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -30,10 +32,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 
 app.use('/api/users', userRoutes);
-// Test route
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'API is working!' });
-});
+
+app.use('/api/reservations', reservationRoutes);
+
+app.use('/api/tickets', ticketRoutes);
 
 // Error handling
 app.use((err, req, res, next) => {
