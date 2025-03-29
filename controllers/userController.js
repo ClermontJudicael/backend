@@ -41,8 +41,6 @@ const getUserById = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-// Modifier un utilisateur
 const updateUser = async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
@@ -63,8 +61,23 @@ const updateUser = async (req, res) => {
       return res.status(400).json({ message: 'Aucune donnée à mettre à jour' });
     }
 
-    // Log des données que vous essayez de mettre à jour
-    console.log('Données à mettre à jour:', { userId, username, email, role });
+    // PROTECTION CONTRE LA DÉSACTIVATION DU DERNIER ADMIN
+    if (role && role !== 'admin') {
+      // 1. Vérifier si l'utilisateur cible est actuellement admin
+      const targetUser = await User.findById(userId);
+      
+      if (targetUser.role === 'admin') {
+        // 2. Compter le nombre d'admins
+        const adminCount = await User.countAdminUsers();
+        
+        // 3. Si c'est le dernier admin, bloquer la modification
+        if (adminCount <= 1) {
+          return res.status(403).json({ 
+            message: 'Action interdite : il doit rester au moins un administrateur' 
+          });
+        }
+      }
+    }
 
     // Appel à la méthode updateUser du modèle
     const updatedUser = await User.updateUser(userId, req.body);
@@ -111,7 +124,7 @@ const createUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
+// Supprimer un utilisateur
 const deleteUser = async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
@@ -121,12 +134,22 @@ const deleteUser = async (req, res) => {
       return res.status(403).json({ message: 'Non autorisé. Rôle d\'administrateur requis.' });
     }
 
+    // PROTECTION CONTRE LA SUPPRESSION DU DERNIER ADMIN
+    const targetUser = await User.findById(userId);
+    if (targetUser.role === 'admin') {
+      const adminCount = await User.countAdminUsers();
+      if (adminCount <= 1) {
+        return res.status(403).json({
+          message: 'Action interdite : il doit rester au moins un administrateur'
+        });
+      }
+    }
+
     const deletedUser = await User.deleteUser(userId);
 
     if (!deletedUser) {
       return res.status(404).json({ message: 'Utilisateur non trouvé' });
     }
-
     
     res.json({ message: 'Utilisateur supprimé avec succès' });
   

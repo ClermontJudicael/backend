@@ -150,7 +150,28 @@ class User {
       }
     }
   }
+
+static async countAdminUsers() {
+  let client;
+  try {
+    client = await pool.connect();
+    const result = await client.query(
+      'SELECT COUNT(*) FROM users WHERE role = $1', 
+      ['admin']
+    );
+    return parseInt(result.rows[0].count);
+  } catch (error) {
+    console.error('Erreur dans countAdminUsers:', error);
+    throw new Error(`Erreur lors du comptage des admins: ${error.message}`);
+  } finally {
+    if (client) {
+      client.release();
+    }
+  }
 }
+}
+
+
 
 
 module.exports = User; 
