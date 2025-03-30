@@ -1,224 +1,86 @@
-const express = require('express');
-const router = express.Router();
-const Event = require('../models/Event');
-const { authenticateToken } = require('../authMiddleware');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const ticketController = require('../controllers/ticketController');
-const reservationController = require('../controllers/reservationController');
+router.post('/', authenticateToken, async (req, res) => {
+  console.log('Requête reçue:', {
+    body: req.body,
+    user: req.user
+  });
 
-// Configuration de Multer pour gérer les uploads d'images
-const uploadDir = path.join(__dirname, '../images/events');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir)
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
-  }
-});
-
-const upload = multer({ 
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // limite à 5MB
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Le fichier doit être une image'), false);
-    }
-  }
-});
-
-// Route pour l'upload d'image d'un événement
-router.post('/:id/image', authenticateToken, upload.single('image'), async (req, res) => {
   try {
-    if (req.user.role !== 'admin' && req.user.role !== 'organizer') {
-      return res.status(403).json({ message: 'Non autorisé' });
+    // Validation des permissions
+    if (!['admin', 'organizer'].includes(req.user.role)) {
+      return res.status(403).json({ 
+        message: 'Action non autorisée pour votre rôle',
+        code: 'UNAUTHORIZED_ROLE'
+      });
     }
-    
-    const eventId = parseInt(req.params.id);
-    const event = await Event.getEventById(eventId);
-    
-    if (!event) {
-      return res.status(404).json({ message: 'Événement non trouvé' });
-    }
-    
-    // Si l'utilisateur est un organisateur, vérifier que c'est son événement
-    if (req.user.role === 'organizer' && event.organizer_id !== req.user.id) {
-      return res.status(403).json({ message: 'Vous ne pouvez modifier que vos propres événements' });
-    }
-    
-    // Si un fichier a été uploadé
-    if (req.file) {
-      // Mettre à jour l'URL de l'image dans l'événement
-      const imageUrl = `/images/events/${req.file.filename}`;
-      
-      // Ici il faudrait mettre à jour l'événement dans la BDD
-      // Vous devrez ajouter une méthode updateEvent dans votre modèle Event
-      // Pour l'instant, on simule simplement une réponse
-      
-      res.json({ imageUrl });
-    } else {
-      res.status(400).json({ message: 'Aucune image fournie' });
-    }
-  } catch (error) {
-    console.error('Erreur dans l\'upload d\'image:', error);
-    res.status(500).json({ message: error.message });
-  }
-});
 
-// Route pour changer le statut d'un événement
-router.put('/:id/status', authenticateToken, async (req, res) => {
-  try {
-    if (req.user.role !== 'admin' && req.user.role !== 'organizer') {
-      return res.status(403).json({ message: 'Non autorisé' });
+    // Validation des données
+    const requiredFields = ['title', 'date', 'location', 'category'];
+    const missingFields = requiredFields.filter(field => !req.body[field]);
+    
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        message: 'Champs obligatoires manquants',
+        missingFields,
+        code: 'VALIDATION_ERROR'
+      });
     }
-    
-    const eventId = parseInt(req.params.id);
-    const { status } = req.body;
-    
-    if (!status || !['draft', 'published', 'canceled'].includes(status)) {
-      return res.status(400).json({ message: 'Statut invalide. Doit être: draft, published ou canceled' });
-    }
-    
-    const event = await Event.getEventById(eventId);
-    
-    if (!event) {
-      return res.status(404).json({ message: 'Événement non trouvé' });
-    }
-    
-    // Si l'utilisateur est un organisateur, vérifier que c'est son événement
-    if (req.user.role === 'organizer' && event.organizer_id !== req.user.id) {
-      return res.status(403).json({ message: 'Vous ne pouvez modifier que vos propres événements' });
-    }
-    
-    // Ici il faudrait mettre à jour l'événement dans la BDD
-    // Vous devrez ajouter une méthode updateEventStatus dans votre modèle Event
-    // Pour l'instant, on simule simplement une réponse
-    
-    res.json({ ...event, status });
-  } catch (error) {
-    console.error('Erreur dans la mise à jour du statut:', error);
-    res.status(500).json({ message: error.message });
-  }
-});
 
-// Routes pour les tickets d'un événement
-router.get('/:id/tickets', ticketController.getTicketsByEventId);
-
-// Routes pour les réservations d'un événement
-router.get('/:id/reservations', authenticateToken, reservationController.getReservationsByEventId);
-
-// Récupérer tous les événements avec filtres
-router.get('/', async (req, res) => {
-  try {
-    console.log('Route /api/events appelée avec les filtres:', req.query);
-    
-    const filters = {
-      date: req.query.date,
-      location: req.query.location,
-      category: req.query.category,
-      search: req.query.search
+    // Préparation des données
+    const eventData = {
+      ...req.body,
+      organizer_id: req.user.role === 'organizer' ? req.user.id : req.body.organizer_id,
+      is_published: req.body.is_published || false
     };
+
+    // Création dans la base de données
+    const newEvent = await Event.createEvent(eventData);
     
-    console.log('Filtres traités:', filters);
-    const events = await Event.getAllEvents(filters);
-    console.log('Événements trouvés:', events);
-    
-    // Définir l'en-tête Content-Range
-    res.set('Content-Range', `events 0-${events.length - 1}/${events.length}`);
-    res.set('X-Total-Count', events.length);
-    res.json(events);
+    if (!newEvent || !newEvent.id) {
+      throw new Error('La création a échoué: aucune donnée retournée');
+    }
+
+    // Réponse formatée pour React Admin
+    return res.status(201).json({
+      data: {
+        id: newEvent.id,
+        title: newEvent.title,
+        description: newEvent.description,
+        date: newEvent.date,
+        location: newEvent.location,
+        category: newEvent.category,
+        image_url: newEvent.image_url,
+        image_alt: newEvent.image_alt,
+        organizer_id: newEvent.organizer_id,
+        max_attendees: newEvent.max_attendees,
+        is_published: newEvent.is_published,
+        created_at: newEvent.created_at,
+        updated_at: newEvent.updated_at
+      }
+    });
+
   } catch (error) {
-    console.error('Erreur dans la route /api/events:', error);
-    res.status(500).json({ 
-      message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    console.error('Erreur complète:', error);
+    
+    let statusCode = 500;
+    let errorMessage = 'Erreur serveur';
+    let errorCode = 'SERVER_ERROR';
+
+    if (error.code === '23503') {
+      statusCode = 400;
+      errorMessage = 'Organisateur invalide';
+      errorCode = 'INVALID_ORGANIZER';
+    } else if (error.code === '23502') {
+      statusCode = 400;
+      errorMessage = 'Données obligatoires manquantes';
+      errorCode = 'MISSING_REQUIRED_FIELDS';
+    }
+
+    return res.status(statusCode).json({
+      message: errorMessage,
+      code: errorCode,
+      ...(process.env.NODE_ENV === 'development' && {
+        details: error.message
+      })
     });
   }
 });
-
-// Créer un événement
-router.post('/', authenticateToken, async (req, res) => {
-  try {
-    if (req.user.role !== 'admin' && req.user.role !== 'organizer') {
-      return res.status(403).json({ message: 'Non autorisé' });
-    }
-    
-    // Créer un nouvel événement
-    // Vous devrez ajouter une méthode createEvent dans votre modèle Event
-    
-    res.status(201).json({ message: 'Création d\'événement à implémenter' });
-  } catch (error) {
-    console.error('Erreur dans la création d\'événement:', error);
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Modifier un événement
-router.put('/:id', authenticateToken, async (req, res) => {
-  try {
-    if (req.user.role !== 'admin' && req.user.role !== 'organizer') {
-      return res.status(403).json({ message: 'Non autorisé' });
-    }
-    
-    const eventId = parseInt(req.params.id);
-    const event = await Event.getEventById(eventId);
-    
-    if (!event) {
-      return res.status(404).json({ message: 'Événement non trouvé' });
-    }
-    
-    // Si l'utilisateur est un organisateur, vérifier que c'est son événement
-    if (req.user.role === 'organizer' && event.organizer_id !== req.user.id) {
-      return res.status(403).json({ message: 'Vous ne pouvez modifier que vos propres événements' });
-    }
-    
-    // Mettre à jour l'événement
-    // Vous devrez ajouter une méthode updateEvent dans votre modèle Event
-    
-    res.json({ message: 'Mise à jour d\'événement à implémenter' });
-  } catch (error) {
-    console.error('Erreur dans la mise à jour d\'événement:', error);
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Supprimer un événement
-router.delete('/:id', authenticateToken, async (req, res) => {
-  try {
-    if (req.user.role !== 'admin' && req.user.role !== 'organizer') {
-      return res.status(403).json({ message: 'Non autorisé' });
-    }
-    
-    const eventId = parseInt(req.params.id);
-    const event = await Event.getEventById(eventId);
-    
-    if (!event) {
-      return res.status(404).json({ message: 'Événement non trouvé' });
-    }
-    
-    // Si l'utilisateur est un organisateur, vérifier que c'est son événement
-    if (req.user.role === 'organizer' && event.organizer_id !== req.user.id) {
-      return res.status(403).json({ message: 'Vous ne pouvez supprimer que vos propres événements' });
-    }
-    
-    // Supprimer l'événement
-    // Vous devrez ajouter une méthode deleteEvent dans votre modèle Event
-    
-    res.status(204).send();
-  } catch (error) {
-    console.error('Erreur dans la suppression d\'événement:', error);
-    res.status(500).json({ message: error.message });
-  }
-});
-
-module.exports = router; 
