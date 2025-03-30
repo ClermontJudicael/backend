@@ -33,8 +33,14 @@ class User {
             const searchValue = `%${filters.q}%`;
             query += ' AND (username ILIKE $' + (values.length + 1) + 
                      ' OR email ILIKE $' + (values.length + 2) + 
-                     ' OR role ILIKE $' + (values.length + 3) + ')'; // Assurez-vous de ne pas ajouter d'autres champs non définis
-            values.push(searchValue, searchValue, searchValue); // Ajoutez la même valeur pour chaque champ
+                     ' OR role ILIKE $' + (values.length + 3) + ')'; 
+            values.push(searchValue, searchValue, searchValue);
+        }
+
+        // Filtre par rôle
+        if (filters.role) {
+            query += ' AND role = $' + (values.length + 1);
+            values.push(filters.role);
         }
 
         query += ' ORDER BY id ASC'; 
