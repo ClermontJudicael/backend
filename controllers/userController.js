@@ -4,17 +4,23 @@ const User = require('../models/User');
 // Liste de tous les utilisateurs
 const getAllUsers = async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Non autorisé. Rôle d\'administrateur requis.' });
-    }
-    
-    const users = await User.getAllUsers();
-    res.set('Content-Range', `users 0-${users.length-1}/${users.length}`);
-    res.set('X-Total-Count', users.length);
-    res.json(users);
+      console.log('Requête reçue avec les filtres:', req.query); // Log des filtres reçus
+
+      if (req.user.role !== 'admin') {
+          return res.status(403).json({ message: 'Non autorisé. Rôle d\'administrateur requis.' });
+      }
+
+      // Analyser le filtre
+      const filters = req.query.filter ? JSON.parse(req.query.filter) : {};
+      console.log('Filtres analysés:', filters); // Log des filtres analysés
+
+      const users = await User.getAllUsers(filters); // Passer les filtres analysés
+      res.set('Content-Range', `users 0-${users.length-1}/${users.length}`);
+      res.set('X-Total-Count', users.length);
+      res.json(users);
   } catch (error) {
-    console.error('Erreur dans getAllUsers:', error);
-    res.status(500).json({ message: error.message });
+      console.error('Erreur dans getAllUsers:', error);
+      res.status(500).json({ message: error.message });
   }
 };
 
