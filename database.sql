@@ -123,6 +123,24 @@ CREATE TABLE admin_logs (
     CONSTRAINT fk_admin FOREIGN KEY (admin_id) REFERENCES users(id)
 );
 
+-- Supprimer la contrainte existante
+ALTER TABLE reservations
+DROP CONSTRAINT fk_user;
+
+-- Ajouter la contrainte avec ON DELETE CASCADE
+ALTER TABLE reservations
+ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE reservations
+DROP CONSTRAINT reservations_user_id_fkey;
+
+ALTER TABLE reservations
+DROP CONSTRAINT fk_user,
+ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+
+
+
 -- Données initiales pour les utilisateurs
 INSERT INTO users (username, email, password, role)
 VALUES
@@ -159,3 +177,17 @@ CREATE INDEX idx_reservations_user_id ON reservations(user_id);
 CREATE INDEX idx_reservations_ticket_id ON reservations(ticket_id);
 CREATE INDEX idx_sessions_token ON sessions(token);
 CREATE INDEX idx_sessions_user_id ON sessions(user_id);
+
+
+-- Insertion de réservations pour différents utilisateurs et tickets
+INSERT INTO reservations (user_id, ticket_id, quantity, status)
+VALUES
+    (1, 1, 1, 'confirmed'),  -- L'utilisateur avec id 1 réserve 1 ticket VIP pour l'événement 1
+    (1, 2, 2, 'pending'),    -- L'utilisateur avec id 1 réserve 2 tickets Standard pour l'événement 1 (en attente)
+    (2, 3, 1, 'confirmed'),  -- L'utilisateur avec id 2 réserve 1 ticket Early Bird pour l'événement 2
+    (2, 2, 5, 'pending'),    -- L'utilisateur avec id 2 réserve 5 tickets Standard pour l'événement 1 (en attente)
+    (1, 3, 2, 'confirmed');  -- L'utilisateur avec id 1 réserve 2 tickets Early Bird pour l'événement 2
+
+INSERT INTO reservations (user_id, ticket_id, quantity, status)
+VALUES
+    (8, 1, 1, 'confirmed'); 

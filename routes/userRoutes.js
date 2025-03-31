@@ -1,4 +1,4 @@
-// routes/userRoutes.js
+
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
@@ -13,4 +13,7 @@ router.get('/:id', authenticateToken, userController.getUserById);
 // Modifier un utilisateur
 router.put('/:id', authenticateToken, userController.updateUser);
 
-module.exports = router;
+// Réservations d'un utilisateur
+router.get('/:id/reservations', authenticateToken, require('../controllers/reservationController').getReservationsByUserId);
+
+module.exports = router; 

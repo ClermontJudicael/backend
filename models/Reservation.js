@@ -5,72 +5,137 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// Data temporaires - à remplacer par des requêtes à la BDD
-const reservations = [
-  {
-    id: 1,
-    user_id: 3,
-    ticket_id: 1,
-    quantity: 2,
-    status: 'confirmed',
-    created_at: '2024-03-15T10:30:00'
-  },
-  {
-    id: 2,
-    user_id: 3,
-    ticket_id: 3,
-    quantity: 4,
-    status: 'confirmed',
-    created_at: '2024-03-16T14:45:00'
-  }
-];
 
 class Reservation {
-  static async getAllReservations() {
-    // Temporaire - à remplacer par requête SQL
-    return reservations;
+  static async getAllReservations(filters = {}) {
+    let client;
+    try {
+      client = await pool.connect();
+      let query = 'SELECT * FROM reservations WHERE 1=1'; 
+      const values = [];
+  
+      if (filters.userId) {
+        query += ' AND user_id = $' + (values.length + 1);
+        values.push(filters.userId);
+      }
+  
+      if (filters.ticketId) {
+        query += ' AND ticket_id = $' + (values.length + 1);
+        values.push(filters.ticketId);
+      }
+  
+      if (filters.status) {
+        query += ' AND status = $' + (values.length + 1);
+        values.push(filters.status);
+      }
+  
+      query += ' ORDER BY id ASC'; 
+      
+      const result = await client.query(query, values);
+      return result.rows;
+    } catch (error) {
+      console.error('Erreur dans getAllReservations:', error);
+      throw new Error(`Erreur lors de la récupération des réservations: ${error.message}`);
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
   }
 
-  static async getReservationsByEventId(eventId, ticketIds) {
-    // Temporaire - à remplacer par requête SQL
-    return reservations.filter(r => ticketIds.includes(r.ticket_id));
+  static async findById(id) {
+    let client;
+    try {
+      client = await pool.connect();
+      const result = await client.query('SELECT * FROM reservations WHERE id = $1', [id]);
+      return result.rows[0];
+    } catch (error) {
+      console.error('Erreur dans findById:', error);
+      throw new Error(`Erreur lors de la récupération de la réservation: ${error.message}`);
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
   }
 
-  static async getReservationsByUserId(userId) {
-    // Temporaire - à remplacer par requête SQL
-    return reservations.filter(r => r.user_id === parseInt(userId));
+  static async createReservation({ userId, ticketId, quantity, status = 'pending' }) {
+    let client;
+    try {
+      client = await pool.connect();
+      const result = await client.query(
+        'INSERT INTO reservations (user_id, ticket_id, quantity, status) VALUES ($1, $2, $3, $4) RETURNING *',
+        [userId, ticketId, quantity, status]
+      );
+      return result.rows[0]; // Retourne la réservation créée
+    } catch (error) {
+      console.error('Erreur dans createReservation:', error);
+      throw new Error(`Erreur lors de la création de la réservation: ${error.message}`);
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
   }
 
-  static async getReservationById(id) {
-    // Temporaire - à remplacer par requête SQL
-    return reservations.find(r => r.id === parseInt(id));
+  static async updateReservation(id, updatedReservation) {
+    let client;
+    try {
+      client = await pool.connect();
+      const result = await client.query(
+        'UPDATE reservations SET ticket_id = $1, quantity = $2, status = $3 WHERE id = $4 RETURNING *',
+        [updatedReservation.ticket_id, updatedReservation.quantity, updatedReservation.status, id]
+      );
+      return result.rows[0];
+    } catch (error) {
+      console.error('Erreur dans updateReservation:', error);
+      throw new Error(`Erreur lors de la mise à jour de la réservation: ${error.message}`);
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
   }
 
-  static async createReservation(reservationData) {
-    // Temporaire - à remplacer par requête SQL
-    const newReservation = {
-      id: reservations.length + 1,
-      ...reservationData,
-      status: 'confirmed',
-      created_at: new Date().toISOString()
-    };
-    
-    reservations.push(newReservation);
-    return newReservation;
+  static async deleteReservation(id) {
+    let client;
+    try {
+      client = await pool.connect();
+      const result = await client.query('DELETE FROM reservations WHERE id = $1', [id]);
+      return result.rowCount > 0; // Retourne true si une réservation a été supprimée, sinon false
+    } catch (error) {
+      console.error('Erreur dans deleteReservation:', error);
+      throw new Error(`Erreur lors de la suppression de la réservation: ${error.message}`);
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
   }
 
-  static async cancelReservation(id) {
-    // Temporaire - à remplacer par requête SQL
-    const reservationIndex = reservations.findIndex(r => r.id === parseInt(id));
-    if (reservationIndex === -1) return null;
-    
-    reservations[reservationIndex] = {
-      ...reservations[reservationIndex],
-      status: 'canceled'
-    };
-    
-    return reservations[reservationIndex];
+  static async countReservations(filters = {}) {
+    let client;
+    try {
+      client = await pool.connect();
+      let query = 'SELECT COUNT(*) FROM reservations WHERE 1=1'; 
+      const values = [];
+
+      if (filters.status) {
+        query += ' AND status = $' + (values.length + 1);
+        values.push(filters.status);
+      }
+
+      const result = await client.query(query, values);
+      return parseInt(result.rows[0].count, 10); // Retourne le nombre total de réservations
+    } catch (error) {
+      console.error('Erreur dans countReservations:', error);
+      throw new Error(`Erreur lors du comptage des réservations: ${error.message}`);
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
   }
 }
 
-module.exports = Reservation; 
+module.exports = Reservation;

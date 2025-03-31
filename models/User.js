@@ -1,79 +1,67 @@
 const { Pool } = require("pg");
 const bcrypt = require("bcryptjs");
-const pool = require('../config/database');
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
+
+// Data temporaires - à remplacer par des requêtes à la BDD
+const users = [
+  {
+    id: 1,
+    username: 'admin',
+    email: 'admin@example.com',
+    password: 'radokely', // 'password'
+    role: 'admin'
+  },
+  {
+    id: 2,
+    username: 'organizer',
+    email: 'organizer@example.com',
+    password: 'organisateur', // 'password'
+    role: 'organizer'
+  },
+  {
+    id: 3,
+    username: 'user',
+    email: 'user@example.com',
+    password: 'user', // 'password'
+    role: 'user'
+  }
+];
 
 class User {
   static async findByUsername(username) {
-    const { rows } = await pool.query(
-        'SELECT * FROM users WHERE username = $1',
-        [username]
-    );
-    return rows[0] || null;
-  }
-
-  static async findByEmail(email) {
-    const { rows } = await pool.query(
-        'SELECT * FROM users WHERE email = $1',
-        [email]
-    );
-    return rows[0] || null;
+    // Temporaire - à remplacer par requête SQL
+    return users.find(u => u.username === username);
   }
 
   static async findById(id) {
-    const { rows } = await pool.query(
-        'SELECT id, username, email, role, created_at FROM users WHERE id = $1',
-        [id]
-    );
-    return rows[0] || null;
+    // Temporaire - à remplacer par requête SQL
+    return users.find(u => u.id === parseInt(id));
   }
 
   static async getAllUsers() {
-    const { rows } = await pool.query(
-        'SELECT id, username, email, role, created_at FROM users'
-    );
-    return rows;
+    // Temporaire - à remplacer par requête SQL
+    return users.map(({ password, ...user }) => user);
   }
 
-  static async create({ username, email, password, role = 'user' }) {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const { rows } = await pool.query(
-        'INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id, username, email, role, created_at',
-        [username, email, hashedPassword, role]
-    );
-    return rows[0];
-  }
-
-  static async updateUser(id, { username, email, role }) {
-    const { rows } = await pool.query(
-        `UPDATE users 
-       SET username = $1, email = $2, role = $3 
-       WHERE id = $4 
-       RETURNING id, username, email, role, created_at`,
-        [username, email, role, id]
-    );
-    return rows[0] || null;
-  }
-
-  static async updatePassword(id, newPassword) {
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await pool.query(
-        'UPDATE users SET password = $1 WHERE id = $2',
-        [hashedPassword, id]
-    );
-    return true;
-  }
-
-  static async deleteUser(id) {
-    const { rowCount } = await pool.query(
-        'DELETE FROM users WHERE id = $1',
-        [id]
-    );
-    return rowCount > 0;
-  }
-
-  static async comparePasswords(candidatePassword, hashedPassword) {
-    return await bcrypt.compare(candidatePassword, hashedPassword);
+  static async updateUser(id, userData) {
+    // Temporaire - à remplacer par requête SQL
+    const userIndex = users.findIndex(u => u.id === parseInt(id));
+    if (userIndex === -1) return null;
+    
+    users[userIndex] = {
+      ...users[userIndex],
+      ...userData,
+      id: parseInt(id), // Conserver l'ID original
+      password: users[userIndex].password // Ne pas permettre de modifier le mot de passe via cette route
+    };
+    
+    const { password, ...safeUser } = users[userIndex];
+    return safeUser;
   }
 }
 
-module.exports = User;
+module.exports = User; 

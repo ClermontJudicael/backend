@@ -19,7 +19,7 @@ const getAllReservations = async (req, res) => {
     
     // Ajouter des détails sur les tickets et événements
     const detailedReservations = await Promise.all(allReservations.map(async (reservation) => {
-      const ticket = await Ticket.getTicketById(reservation.ticket_id);
+      const ticket = await Ticket.findById(reservation.ticket_id);
       let event = null;
       if (ticket) {
         event = await Event.getEventById(ticket.event_id);
@@ -78,7 +78,7 @@ const getReservationsByUserId = async (req, res) => {
     
     // Ajouter des détails sur les tickets et événements
     const detailedReservations = await Promise.all(userReservations.map(async (reservation) => {
-      const ticket = await Ticket.getTicketById(reservation.ticket_id);
+      const ticket = await Ticket.findById(reservation.ticket_id);
       let event = null;
       if (ticket) {
         event = await Event.getEventById(ticket.event_id);
@@ -96,6 +96,37 @@ const getReservationsByUserId = async (req, res) => {
     res.json(detailedReservations);
   } catch (error) {
     console.error('Erreur dans getReservationsByUserId:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+const getConfirmedReservations = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Non autorisé' });
+    }
+
+    // Récupérer les paramètres de pagination
+    const page = parseInt(req.query.page) || 1;
+    const perPage = parseInt(req.query.perPage) || 10;
+
+    // Récupérer toutes les réservations confirmées avec pagination
+    const confirmedReservations = await Reservation.getAllReservations({
+      status: 'confirmed',
+      page,
+      perPage
+    });
+
+    // Comptez le nombre total de réservations confirmées
+    const totalConfirmed = await Reservation.countReservations({ status: 'confirmed' });
+
+    // Définissez l'en-tête Content-Range
+    res.set('Content-Range', `reservations ${(page - 1) * perPage}-${(page * perPage) - 1}/${totalConfirmed}`);
+    res.set('X-Total-Count', totalConfirmed);
+
+    // Renvoie les réservations confirmées
+    res.json(confirmedReservations);
+  } catch (error) {
+    console.error('Erreur dans getConfirmedReservations:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -119,7 +150,7 @@ const cancelReservation = async (req, res) => {
     const updatedReservation = await Reservation.cancelReservation(reservationId);
     
     // Augmenter la quantité disponible du ticket
-    const ticket = await Ticket.getTicketById(reservation.ticket_id);
+    const ticket = await Ticket.findById(reservation.ticket_id);
     if (ticket) {
       await Ticket.updateTicket(ticket.id, {
         available_quantity: ticket.available_quantity + reservation.quantity
@@ -137,5 +168,6 @@ module.exports = {
   getAllReservations,
   getReservationsByEventId,
   getReservationsByUserId,
-  cancelReservation
+  cancelReservation,
+  getConfirmedReservations
 };
