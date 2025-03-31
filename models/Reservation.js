@@ -13,17 +13,22 @@ class Reservation {
       client = await pool.connect();
       let query = 'SELECT * FROM reservations WHERE 1=1'; 
       const values = [];
-
+  
       if (filters.userId) {
         query += ' AND user_id = $' + (values.length + 1);
         values.push(filters.userId);
       }
-
+  
       if (filters.ticketId) {
         query += ' AND ticket_id = $' + (values.length + 1);
         values.push(filters.ticketId);
       }
-
+  
+      if (filters.status) {
+        query += ' AND status = $' + (values.length + 1);
+        values.push(filters.status);
+      }
+  
       query += ' ORDER BY id ASC'; 
       
       const result = await client.query(query, values);
@@ -101,6 +106,30 @@ class Reservation {
     } catch (error) {
       console.error('Erreur dans deleteReservation:', error);
       throw new Error(`Erreur lors de la suppression de la réservation: ${error.message}`);
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
+  }
+
+  static async countReservations(filters = {}) {
+    let client;
+    try {
+      client = await pool.connect();
+      let query = 'SELECT COUNT(*) FROM reservations WHERE 1=1'; 
+      const values = [];
+
+      if (filters.status) {
+        query += ' AND status = $' + (values.length + 1);
+        values.push(filters.status);
+      }
+
+      const result = await client.query(query, values);
+      return parseInt(result.rows[0].count, 10); // Retourne le nombre total de réservations
+    } catch (error) {
+      console.error('Erreur dans countReservations:', error);
+      throw new Error(`Erreur lors du comptage des réservations: ${error.message}`);
     } finally {
       if (client) {
         client.release();

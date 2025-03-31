@@ -158,3 +158,6 @@ VALUES
     (2, 2, 5, 'pending'),    -- L'utilisateur avec id 2 réserve 5 tickets Standard pour l'événement 1 (en attente)
     (1, 3, 2, 'confirmed');  -- L'utilisateur avec id 1 réserve 2 tickets Early Bird pour l'événement 2
 
+INSERT INTO reservations (user_id, ticket_id, quantity, status)
+VALUES
+    (8, 1, 1, 'confirmed'); 

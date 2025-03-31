@@ -7,6 +7,9 @@ const {authenticateToken} = require('../authMiddleware');
 // Liste de toutes les réservations (admin uniquement)
 router.get('/', authenticateToken, reservationController.getAllReservations);
 
+// Récupérer les réservations confirmées
+router.get('/confirmed', authenticateToken, reservationController.getConfirmedReservations);
+
 // Annuler une réservation
 router.put('/:id/cancel', authenticateToken, reservationController.cancelReservation);
 
