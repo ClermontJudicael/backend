@@ -2,7 +2,12 @@
 const express = require('express');
 const router = express.Router();
 const reservationController = require('../controllers/reservationController');
-const {authenticateToken} = require('../authMiddleware');
+const {authenticateToken} = require('../middlewares/authMiddleware');
+
+// Logs pour vérifier les fonctions importées
+console.log('getAllReservations:', reservationController.getAllReservations);
+console.log('getConfirmedReservations:', reservationController.getConfirmedReservations);
+console.log('cancelReservation:', reservationController.cancelReservation);
 
 // Liste de toutes les réservations (admin uniquement)
 router.get('/', authenticateToken, reservationController.getAllReservations);

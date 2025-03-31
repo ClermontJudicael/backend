@@ -1,12 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const Event = require('../models/Event');
-const { authenticateToken } = require('../authMiddleware');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const ticketController = require('../controllers/ticketController');
 const reservationController = require('../controllers/reservationController');
+const { authenticateToken } = require('../middlewares/authMiddleware');
+
+
+// Vérifiez si ticketController est bien importé
+console.log('ticketController:', ticketController);
 
 // Configuration de Multer pour gérer les uploads d'images
 const uploadDir = path.join(__dirname, '../images/events');
@@ -150,8 +154,11 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
 });
 
 // Routes pour les tickets d'un événement
-console.log(ticketController.getTicketsByEventId); // Cela devrait afficher la fonction ou undefined
-router.get('/:id/tickets', ticketController.getTicketsByEventId);
+console.log('getTicketsByEventId:', ticketController.getTicketsByEventId); // Vérifiez ici
+if (typeof ticketController.getTicketsByEventId !== 'function') {
+    throw new Error('getTicketsByEventId is not a function');
+}
+router.get('/:id/tickets', authenticateToken, ticketController.getTicketsByEventId);
 
 
 // Routes pour les réservations d'un événement

@@ -136,6 +136,23 @@ class Reservation {
       }
     }
   }
+
+  static async getReservationsByEventId(eventId) {
+    let client;
+    try {
+      client = await pool.connect();
+      const result = await client.query('SELECT * FROM reservations WHERE event_id = $1 ORDER BY id ASC', [eventId]);
+      return result.rows; // Retourne toutes les réservations pour l'événement donné
+    } catch (error) {
+      console.error('Erreur dans getReservationsByEventId:', error);
+      throw new Error(`Erreur lors de la récupération des réservations pour l'événement: ${error.message}`);
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
+  }
+  
 }
 
 module.exports = Reservation;
