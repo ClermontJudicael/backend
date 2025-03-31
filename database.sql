@@ -91,7 +91,7 @@ CREATE TABLE receipts (
                           pdf_url VARCHAR(255), -- Chemin vers le PDF stocké
                           amount DECIMAL(10, 2) NOT NULL,
                           payment_method VARCHAR(50),
-                          payment_status VARCHAR(20) NOT NULL DEFAULT 'completed', -- 'pending', 'completed', 'failed'
+                          payment_status VARCHAR(20) NOT NULL DEFAULT 'completed',
                           issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                           CONSTRAINT fk_reservation FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE CASCADE,
                           CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id),
@@ -126,7 +126,7 @@ CREATE TABLE admin_logs (
 -- Données initiales pour les utilisateurs
 INSERT INTO users (username, email, password, role)
 VALUES
-    ('admin', 'admin@example.com', '$2b$10$TeZjXWkKh2uYLgGa7nFNJekmERgTwrXF8YPHe0NTR4hEUc/E.wmRS', 'admin'), -- 'radokely'
+    ('admin', 'admin@example.com', '$2b$10$TeZjXWkKh2uYLgGa7nFNJekmERgTwrXF8YPHe0NTR4hEUc/E.wmRS', 'admin'),
     ('organizer', 'organizer@example.com', '$2a$10$lPGAeg2c2FRBqT5K.5Byn.31qgJQV0LKxKDwZK.Rt40m77zIE1sTG', 'organizer'), -- 'organisateur'
     ('user', 'user@example.com', '$2a$10$f6Q18iVJbPj/WZJnJvKmH.qc76qY/nux9HylIsPhWiLVIVH1ZuySa', 'user'); -- 'user'
 

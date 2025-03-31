@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const ticketController = require('../controllers/ticketController');
-const authenticateToken = require('../middlewares/authMiddleware');
+const authenticateToken = require('../authMiddleware');
 
 // Liste de tous les tickets
 router.get('/', ticketController.getAllTickets);
