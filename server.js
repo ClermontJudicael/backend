@@ -2,14 +2,12 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const eventRoutes = require("./routes/eventRoutes");
-<<<<<<< Updated upstream
-const authRoutes = require("./authRoutes"); // Import authentication routes
-=======
+
 const authRoutes = require("./authRoutes"); // Import authentication routes
 const userRoutes = require("./routes/userRoutes");
 const ticketRoutes = require("./routes/ticketRoutes");
 const reservationRoutes = require("./routes/reservationRoutes");
->>>>>>> Stashed changes
+
 
 const app = express();
 const port = process.env.PORT || 5000;
