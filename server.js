@@ -1,46 +1,40 @@
-// Dans votre fichier server.js (modifications clés)
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const eventRoutes = require('./routes/eventRoutes'); // Assurez-vous que c'est le bon chemin
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const eventRoutes = require("./routes/eventRoutes");
+const authRoutes = require("./routes/authRoutes"); // Import authentication routes
 
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Middleware CORS amélioré
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Total-Count'],
-  exposedHeaders: ['Content-Range', 'X-Total-Count']
+  origin: ["http://localhost:3000", "http://localhost:5173"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  exposedHeaders: ["Content-Range", "X-Total-Count"],
 }));
 
-// Middleware pour parser le JSON
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: "10mb" }));
 
-// Logging des requêtes
+// Logging middleware
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
   next();
 });
 
-// Routes
-app.use('/api/events', eventRoutes); // Doit être après les middlewares
+// Register routes
+app.use("/api/events", eventRoutes);
+app.use("/api/auth", authRoutes);  // ✅ Fix: Authentication routes are now registered
 
-// Route de test
-app.get('/api/ping', (req, res) => {
-  res.json({ status: 'active', timestamp: new Date() });
+// Test route
+app.get("/api/ping", (req, res) => {
+  res.json({ status: "active", timestamp: new Date() });
 });
 
-// Gestion des erreurs
+// Error handling middleware
 app.use((err, req, res, next) => {
   console.error(`[ERROR] ${err.message}`);
-  res.status(err.status || 500).json({
-    error: {
-      message: err.message,
-      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-    }
-  });
+  res.status(err.status || 500).json({ error: err.message });
 });
 
 // Démarrer le serveur
