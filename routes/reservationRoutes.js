@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const reservationController = require('../controllers/reservationController');
-const {authenticateToken} = require('../middlewares/authMiddleware');
+const {authenticateToken} = require('../authMiddleware');
 
 // Logs pour vérifier les fonctions importées
 console.log('getAllReservations:', reservationController.getAllReservations);

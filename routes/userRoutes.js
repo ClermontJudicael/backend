@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
 const reservationController = require('../controllers/reservationController');
-const {authenticateToken} = require('../middlewares/authMiddleware');
+const {authenticateToken} = require('../authMiddleware');
 
 console.log('authenticateToken:', authenticateToken);
 
@@ -26,4 +26,22 @@ router.put('/:id', authenticateToken, userController.updateUser);
 // Réservations d'un utilisateur
 router.get('/:id/reservations', authenticateToken, reservationController.getReservationsByUserId);
 
+
+router.post('/', authenticateToken, userController.createUser);
+
+
+router.delete('/:id', authenticateToken, userController.deleteUser);
+
+
+ router.get('/:id/reservations', authenticateToken, reservationController.getReservationsByUserId);
+
 module.exports = router; 
+
+
+ 
+ 
+ 
+ // Réservations d'un utilisateur
+ router.get('/:id/reservations', authenticateToken, require('../controllers/reservationController').getReservationsByUserId);
+ 
+ module.exports = router; 

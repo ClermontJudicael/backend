@@ -6,7 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const ticketController = require('../controllers/ticketController');
 const reservationController = require('../controllers/reservationController');
-const { authenticateToken } = require('../middlewares/authMiddleware');
+const { authenticateToken } = require('../authMiddleware');
 
 
 // Vérifiez si ticketController est bien importé
