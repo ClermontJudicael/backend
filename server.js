@@ -14,10 +14,12 @@ const port = process.env.PORT || 5000;
 
 app.use(cors({
   origin: ["http://localhost:3000", "http://localhost:5173"],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "Range"],
-  exposedHeaders: ["Content-Range", "X-Total-Count"],
-  credentials: true
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization", "Range", "Accept"],
+  exposedHeaders: ["Content-Range", "X-Total-Count", "Authorization"],
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 
 app.use(express.json({ limit: "10mb" }));
