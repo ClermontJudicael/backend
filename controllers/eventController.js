@@ -28,7 +28,7 @@ const getEventById = async (req, res) => {
   try {
     const eventId = parseInt(req.params.id);
     const event = await Event.findById(eventId);
-    
+
     if (!event) {
       return res.status(404).json({ message: 'Événement non trouvé' });
     }
@@ -38,7 +38,16 @@ const getEventById = async (req, res) => {
       return res.status(403).json({ message: 'Accès non autorisé à cet événement' });
     }
 
-    res.json(event);
+    // AJOUT: Récupération des tickets associés à l'événement
+    const tickets = await Ticket.findByEventId(eventId); // Supposant que cette méthode existe dans votre modèle Ticket
+
+    // AJOUT: Fusion des données de l'événement avec les tickets
+    const responseData = {
+      ...event,
+      tickets: tickets || [] // Retourne un tableau vide si aucun ticket
+    };
+
+    res.json(responseData);
   } catch (error) {
     console.error('Erreur dans getEventById:', error);
     res.status(500).json({ message: error.message });
@@ -142,11 +151,24 @@ const getEventsByOrganizer = async (req, res) => {
   }
 };
 
+// recupere les tickets dans une evenements
+const getEventTickets = async (req, res) => {
+  try {
+    const eventId = parseInt(req.params.id);
+    const tickets = await Ticket.findByEventId(eventId);
+    res.json(tickets);
+  } catch (error) {
+    console.error('Erreur dans getEventTickets:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getAllEvents,
   getEventById,
   createEvent,
   updateEvent,
   deleteEvent,
-  getEventsByOrganizer
+  getEventsByOrganizer,
+  getEventTickets
 };

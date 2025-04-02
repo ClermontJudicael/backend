@@ -21,6 +21,17 @@ app.use(cors({
 
 app.use(express.json({ limit: "10mb" }));
 
+// Ajoutez ce middleware pour debugger les requêtes JSON (à placer LIGNE 24)
+app.use((req, res, next) => {
+  if (req.originalUrl === '/api/auth/login' && req.method === 'POST') {
+    console.log('Body reçu:', req.body); // Debug spécifique pour /login
+    if (!req.body.email || !req.body.password) {
+      return res.status(400).json({ error: "Email et mot de passe requis" });
+    }
+  }
+  next();
+});
+
 // Logging middleware
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);

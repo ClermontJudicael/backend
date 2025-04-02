@@ -156,11 +156,11 @@ VALUES
     ('Exposition d''Art Moderne', 'Découvrez les œuvres d''artistes contemporains', '2024-07-10 10:00:00', 'Galerie Moderna, Lyon', 'Art', '/images/art.jpg', 2, TRUE);
 
 -- Données initiales pour les tickets
-INSERT INTO tickets (event_id, type, price, available_quantity, purchase_limit)
-VALUES
-    (1, 'VIP', 100.00, 50, 2),
-    (1, 'Standard', 50.00, 100, 5),
-    (2, 'Early Bird', 30.00, 200, 10);
+    INSERT INTO tickets (event_id, type, price, available_quantity, purchase_limit)
+    VALUES
+        (1, 'VIP', 100.00, 50, 2),
+        (1, 'Standard', 50.00, 100, 5),
+        (2, 'Early Bird', 30.00, 200, 10);
 
 -- Données initiales pour les réservations
 INSERT INTO reservations (user_id, ticket_id, quantity, status)
@@ -191,4 +191,4 @@ VALUES
 
 INSERT INTO reservations (user_id, ticket_id, quantity, status)
 VALUES
-    (8, 1, 1, 'confirmed'); 
+    (8, 1, 1, 'confirmed');
