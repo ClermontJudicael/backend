@@ -7,6 +7,7 @@ const fs = require('fs');
 const ticketController = require('../controllers/ticketController');
 const reservationController = require('../controllers/reservationController');
 const { authenticateToken } = require('../authMiddleware');
+const eventController = require('../controllers/eventController');
 
 
 // Vérifiez si ticketController est bien importé
@@ -92,14 +93,6 @@ router.get('/:id', async (req, res) => {
       });
     }
 
-    // Si l'événement est en brouillon, vérifier les permissions
-    if (event.status === 'draft') {
-      if (!req.user || (req.user.role !== 'admin' && event.organizer_id !== req.user.id)) {
-        return res.status(403).json({
-          message: 'Accès non autorisé à cet événement en brouillon'
-        });
-      }
-    }
 
     // Ajoute les headers cohérents avec vos autres endpoints
     res.set('Content-Range', `events 0-1/1`);
@@ -117,6 +110,11 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+
+
+
+
+/*
 // Route pour changer le statut d'un événement
 router.put('/:id/status', authenticateToken, async (req, res) => {
   try {
@@ -152,6 +150,7 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+*/
 
 // Routes pour les tickets d'un événement
 console.log('getTicketsByEventId:', ticketController.getTicketsByEventId); // Vérifiez ici
@@ -210,6 +209,8 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
+
+/*
 // Modifier un événement
 router.put('/:id', authenticateToken, async (req, res) => {
   try {
@@ -238,6 +239,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+*/
 
 // Supprimer un événement
 router.delete('/:id', authenticateToken, async (req, res) => {
@@ -267,5 +269,8 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+
+router.put('/:id', authenticateToken, eventController.updateEvent);
 
 module.exports = router;

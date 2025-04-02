@@ -4,25 +4,33 @@ const Ticket = require('../models/Ticket');
 // Liste de tous les événements
 const getAllEvents = async (req, res) => {
   try {
-    // Autorisation: tout le monde peut voir les événements publiés
-    const filter = { ...req.query };
-    
-    // Si ce n'est pas un admin/organizer, on ne montre que les événements publiés
+    // Récupération des paramètres
+    const filters = {
+      ...(req.query.filter ? JSON.parse(req.query.filter) : {}),
+      ...req.query
+    };
+
+    // Pagination (React-Admin compatible)
+    const range = req.query.range ? JSON.parse(req.query.range) : [0, 9];
+    const [start, end] = range;
+    const perPage = end - start + 1;
+    const page = Math.floor(start / perPage) + 1;
+
+    // Filtrage automatique pour les non-admins
     if (req.user.role !== 'admin' && req.user.role !== 'organizer') {
-      filter.is_published = true;
+      filters.is_published = true;
     }
 
-    const events = await Event.getAllEvents(filter);
+    const { events, total } = await Event.getAllEvents(filters, page, perPage);
     
-    res.set('Content-Range', `events 0-${events.length-1}/${events.length}`);
-    res.set('X-Total-Count', events.length);
+    res.set('Content-Range', `events ${start}-${end}/${total}`);
+    res.set('X-Total-Count', total);
     res.json(events);
   } catch (error) {
     console.error('Erreur dans getAllEvents:', error);
     res.status(500).json({ message: error.message });
   }
 };
-
 // Détail d'un événement
 const getEventById = async (req, res) => {
   try {
@@ -82,11 +90,10 @@ const createEvent = async (req, res) => {
   }
 };
 
-// Modifier un événement
 const updateEvent = async (req, res) => {
   try {
     const eventId = parseInt(req.params.id);
-    const event = await Event.findById(eventId);
+    const event = await Event.getEventById(eventId);
     
     if (!event) {
       return res.status(404).json({ message: 'Événement non trouvé' });
@@ -99,13 +106,20 @@ const updateEvent = async (req, res) => {
     }
 
     const updatedEvent = await Event.updateEvent(eventId, req.body);
-    res.json(updatedEvent);
+    
+    // LOG CRITIQUE - Vérifiez les données avant envoi
+    console.log('🟢 [Controller] Données avant envoi:', { 
+      originalData: updatedEvent,
+      formattedData: { data: updatedEvent } 
+    });
+
+    res.json({ data: updatedEvent });
+    
   } catch (error) {
     console.error('Erreur dans updateEvent:', error);
     res.status(500).json({ message: error.message });
   }
 };
-
 // Supprimer un événement
 const deleteEvent = async (req, res) => {
   try {

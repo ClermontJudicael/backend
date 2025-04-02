@@ -153,8 +153,13 @@ class Event {
       console.log('Values:', values);
       
       const result = await client.query(query, values);
-      console.log('Événement mis à jour:', result.rows[0]);
-      
+      // LOG CRITIQUE - Vérifiez ce que PostgreSQL retourne vraiment
+      console.log('🔵 [Model] Résultat PostgreSQL brut:', result.rows[0]);
+      if (!result.rows[0]?.id) {
+      console.error('❌ [Model] Aucun ID trouvé dans le résultat!');
+      }
+
+
       return result.rows[0];
     } catch (error) {
       console.error('Erreur dans updateEvent:', error);
