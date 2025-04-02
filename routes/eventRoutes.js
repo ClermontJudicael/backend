@@ -279,9 +279,10 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     }
 
     // Supprimer l'événement
-    // Vous devrez ajouter une méthode deleteEvent dans votre modèle Event
+    await Event.deleteEvent(eventId); // Appeler la méthode de suppression
 
-    res.status(204).send();
+    // Répondre avec un statut 204 No Content
+    res.status(204).send(); // Pas de contenu à renvoyer
   } catch (error) {
     console.error('Erreur dans la suppression d\'événement:', error);
     res.status(500).json({ message: error.message });
