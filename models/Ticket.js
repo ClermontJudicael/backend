@@ -59,6 +59,7 @@ class Ticket {
     return newTicket;
   }
 
+  
   static async updateTicket(id, updatedTicket) {
     let client;
     try {
@@ -162,6 +163,31 @@ class Ticket {
       if (client) {
         client.release();
       }
+    }
+  }
+
+  static async updateTicketQuantity(id, newQuantity) {
+    let client;
+    try {
+      client = await pool.connect();
+      const result = await client.query(
+        `UPDATE tickets 
+         SET available_quantity = $1, 
+             updated_at = NOW() 
+         WHERE id = $2 
+         RETURNING *`,
+        [newQuantity, id]
+      );
+      
+      if (result.rows.length === 0) {
+        throw new Error('Ticket non trouvé');
+      }
+      return result.rows[0];
+    } catch (error) {
+      console.error('Erreur dans updateTicketQuantity:', error);
+      throw new Error(`Erreur lors de la mise à jour de la quantité du ticket: ${error.message}`);
+    } finally {
+      if (client) client.release();
     }
   }
 }
