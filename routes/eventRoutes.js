@@ -192,23 +192,41 @@ router.get('/', async (req, res) => {
   }
 });
 
+
 // Créer un événement
 router.post('/', authenticateToken, async (req, res) => {
   try {
+    // Vérification des rôles
     if (req.user.role !== 'admin' && req.user.role !== 'organizer') {
       return res.status(403).json({ message: 'Non autorisé' });
     }
 
-    // Créer un nouvel événement
-    // Vous devrez ajouter une méthode createEvent dans votre modèle Event
+    // Validation des données
+    const { title, description, date, location, category } = req.body;
+    if (!title || !date || !location || !category) {
+      return res.status(400).json({ message: 'Tous les champs obligatoires sont requis' });
+    }
 
-    res.status(201).json({ message: 'Création d\'événement à implémenter' });
+    // Ajout de l'organizer_id si c'est un organizer qui crée
+    const eventData = {
+      title,
+      description,
+      date,
+      location,
+      category,
+      organizer_id: req.user.role === 'organizer' ? req.user.id : req.body.organizer_id
+    };
+
+    // Appel à la méthode createEvent du modèle
+    const newEvent = await Event.createEvent(eventData);
+
+    // Réponse avec la structure attendue
+    res.status(201).json({ data: newEvent });
   } catch (error) {
     console.error('Erreur dans la création d\'événement:', error);
     res.status(500).json({ message: error.message });
   }
 });
-
 
 /*
 // Modifier un événement

@@ -65,7 +65,7 @@ const getEventById = async (req, res) => {
 // Créer un nouvel événement
 const createEvent = async (req, res) => {
   try {
-    // Seuls admin et organizer peuvent créer des événements
+    // Vérification des rôles
     if (req.user.role !== 'admin' && req.user.role !== 'organizer') {
       return res.status(403).json({ message: 'Non autorisé. Rôle admin ou organizer requis.' });
     }
@@ -76,19 +76,28 @@ const createEvent = async (req, res) => {
       return res.status(400).json({ message: 'Tous les champs obligatoires sont requis' });
     }
 
-    // Ajout de l'organizer_id si c'est un organizer qui crée
+    // Ajout de l'organizer_id
     const eventData = {
       ...req.body,
       organizer_id: req.user.role === 'organizer' ? req.user.id : req.body.organizer_id
     };
 
+    console.log('Données de l\'événement à créer:', eventData); // Log des données à créer
+
     const newEvent = await Event.createEvent(eventData);
-    res.status(201).json(newEvent);
+    
+    console.log('Événement créé:', newEvent); // Log de l'événement créé
+
+    // Réponse avec la structure attendue
+    res.status(201).json({ data: newEvent });
   } catch (error) {
     console.error('Erreur dans createEvent:', error);
     res.status(500).json({ message: error.message });
   }
 };
+
+
+
 
 const updateEvent = async (req, res) => {
   try {

@@ -84,11 +84,10 @@ class Event {
       }
     }
   }
-
   static async createEvent(eventData) {
     let client;
     try {
-      console.log('Méthode createEvent appelée avec les données:', eventData);
+      console.log('Méthode createEvent appelée avec les données:', eventData); // Log des données reçues
       client = await pool.connect();
       
       const { title, description, date, location, category, image_url, image_alt } = eventData;
@@ -101,11 +100,11 @@ class Event {
       
       const values = [title, description, date, location, category, image_url || null, image_alt || null];
       
-      console.log('Query SQL:', query);
-      console.log('Values:', values);
-      
+      console.log('Query SQL:', query); // Log de la requête SQL
+      console.log('Values:', values); // Log des valeurs envoyées
+  
       const result = await client.query(query, values);
-      console.log('Événement créé:', result.rows[0]);
+      console.log('Résultat de la création d\'événement:', result.rows[0]); // Log du résultat de la requête
       
       return result.rows[0];
     } catch (error) {
@@ -118,6 +117,7 @@ class Event {
     }
   }
 
+  
   static async updateEvent(id, eventData) {
     let client;
     try {
