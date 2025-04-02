@@ -3,6 +3,7 @@ const Reservation = require('../models/Reservation');
  const Event = require('../models/Event');
  const User = require('../models/User');
  const { Pool } = require('pg');
+const { get } = require('../authRoutes');
  const pool = new Pool({
    connectionString: process.env.DATABASE_URL,
  });
@@ -99,6 +100,9 @@ const Reservation = require('../models/Reservation');
      res.status(500).json({ message: error.message });
    }
  };
+
+
+
  const getConfirmedReservations = async (req, res) => {
    try {
      if (req.user.role !== 'admin') {
@@ -131,43 +135,89 @@ const Reservation = require('../models/Reservation');
    }
  };
  
- // Annuler une réservation
  const cancelReservation = async (req, res) => {
-   try {
-     const reservationId = parseInt(req.params.id);
-     const reservation = await Reservation.getReservationById(reservationId);
- 
-     if (!reservation) {
-       return res.status(404).json({ message: 'Réservation non trouvée' });
-     }
- 
-     // Vérifier les autorisations
-     if (req.user.role !== 'admin' && req.user.id !== reservation.user_id) {
-       return res.status(403).json({ message: 'Non autorisé' });
-     }
- 
-     // Mettre à jour le statut de la réservation
-     const updatedReservation = await Reservation.cancelReservation(reservationId);
- 
-     // Augmenter la quantité disponible du ticket
-     const ticket = await Ticket.findById(reservation.ticket_id);
-     if (ticket) {
-       await Ticket.updateTicket(ticket.id, {
-         available_quantity: ticket.available_quantity + reservation.quantity
-       });
-     }
- 
-     res.json(updatedReservation);
-   } catch (error) {
-     console.error('Erreur dans cancelReservation:', error);
-     res.status(500).json({ message: error.message });
-   }
- };
+  try {
+    const reservationId = parseInt(req.params.id);
+    console.log(`Tentative d'annulation de la réservation avec ID: ${reservationId}`);
+    
+    const reservation = await Reservation.findById(reservationId);
+    console.log('Réservation trouvée:', reservation);
+
+    if (!reservation) {
+      return res.status(404).json({ message: 'Réservation non trouvée' });
+    }
+
+    // Vérifier les autorisations
+    if (req.user.role !== 'admin' && req.user.id !== reservation.user_id) {
+      return res.status(403).json({ message: 'Non autorisé' });
+    }
+
+    // Mettre à jour le statut de la réservation
+    const updatedReservation = await Reservation.cancelReservation(reservationId);
+    console.log('Réservation mise à jour:', updatedReservation);
+
+    // Augmenter la quantité disponible du ticket
+    const ticket = await Ticket.findById(reservation.ticket_id);
+    console.log('Ticket trouvé:', ticket);
+
+    if (ticket) {
+      console.log('Quantité disponible avant mise à jour:', ticket.available_quantity);
+      console.log('Quantité à ajouter:', reservation.quantity);
+      
+      const newAvailableQuantity = ticket.available_quantity + reservation.quantity;
+      console.log('Nouvelle quantité disponible:', newAvailableQuantity);
+
+      await Ticket.updateTicketQuantity(ticket.id, newAvailableQuantity);
+    } else {
+      console.log('Aucun ticket trouvé pour cette réservation.');
+    }
+
+    res.json(updatedReservation);
+  } catch (error) {
+    console.error('Erreur dans cancelReservation:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+ const getOneReservation = async (req, res) => {
+  try {
+    const reservationId = parseInt(req.params.id);
+    const reservation = await Reservation.findById(reservationId);
+
+    if (!reservation) {
+      return res.status(404).json({ message: 'Réservation non trouvée' });
+    }
+
+    // Autorisation : admin ou propriétaire de la réservation
+    if (req.user.role !== 'admin' && req.user.id !== reservation.user_id) {
+      return res.status(403).json({ message: 'Non autorisé' });
+    }
+
+    // Récupère les détails associés
+    const ticket = await Ticket.findById(reservation.ticket_id);
+    let event = null;
+    if (ticket) {
+      event = await Event.getEventById(ticket.event_id);
+    }
+
+    res.json({
+      ...reservation,
+      ticket_details: ticket,
+      event_details: event
+    });
+
+  } catch (error) {
+    console.error('Erreur dans getOneReservation:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
  
  module.exports = {
    getAllReservations,
    getReservationsByEventId,
    getReservationsByUserId,
    cancelReservation,
-   getConfirmedReservations
+   getConfirmedReservations,
+   getOneReservation
  };

@@ -11,7 +11,7 @@ class Ticket {
     let client;
     try {
       console.log('Méthode getAllTickets appelée avec les filtres:', filters);
-
+      
       client = await pool.connect();
       let query = 'SELECT * FROM tickets WHERE 1=1';
       const values = [];
@@ -31,7 +31,7 @@ class Ticket {
         values.push(filters.is_active);
       }
       query += ' ORDER BY id ASC';
-
+      
       console.log('Query SQL:', query);
       console.log('Values:', values);
 
@@ -44,6 +44,8 @@ class Ticket {
       if (client) client.release();
     }
   }
+  
+
 
   static async createTicket(ticketData) {
     // Temporaire - à remplacer par requête SQL
@@ -52,7 +54,7 @@ class Ticket {
       ...ticketData,
       is_active: ticketData.is_active !== undefined ? ticketData.is_active : true
     };
-
+    
     tickets.push(newTicket);
     return newTicket;
   }
@@ -62,19 +64,19 @@ class Ticket {
     try {
       client = await pool.connect();
       const result = await client.query(
-          `UPDATE tickets
-           SET type = $1, price = $2, available_quantity = $3,
-               purchase_limit = $4, is_active = $5, updated_at = NOW()
-           WHERE id = $6
-             RETURNING *`,
-          [
-            updatedTicket.type,
-            updatedTicket.price,
-            updatedTicket.available_quantity,
-            updatedTicket.purchase_limit,
-            updatedTicket.is_active,
-            id
-          ]
+        `UPDATE tickets 
+        SET type = $1, price = $2, available_quantity = $3, 
+            purchase_limit = $4, is_active = $5, updated_at = NOW() 
+        WHERE id = $6 
+        RETURNING *`,
+        [
+          updatedTicket.type,
+          updatedTicket.price,
+          updatedTicket.available_quantity,
+          updatedTicket.purchase_limit,
+          updatedTicket.is_active,
+          id
+        ]
       );
       if (result.rows.length === 0) {
         throw new Error('Ticket non trouvé');
@@ -103,43 +105,34 @@ class Ticket {
     } finally {
       if (client) client.release();
     }
-  }
+  } 
 
-    static async findByEventId(eventId) {
-        const id = parseInt(eventId, 10);
-        if (isNaN(id)) {
-            throw new Error('ID doit être un nombre');
-        }
-
-        let client;
-        try {
-            client = await pool.connect();
-            const result = await client.query(
-                `SELECT * FROM tickets 
-             WHERE event_id = $1 
-             AND is_active = true 
-             AND available_quantity > 0`,
-                [id]
-            );
-            return result.rows;
-        } catch (error) {
-            console.error('Erreur DB:', error);
-            throw error;
-        } finally {
-            if (client) client.release();
-        }
+  static async findByEventId(eventId) {
+    let client;
+    try {
+      client = await pool.connect();
+      const result = await client.query('SELECT * FROM tickets WHERE event_id = $1 AND is_active = true', [eventId]);
+      return result.rows; // Retourne tous les tickets actifs pour l'événement donné
+    } catch (error) {
+      console.error('Erreur dans findByEventId:', error);
+      throw new Error(`Erreur lors de la récupération des tickets pour l'événement: ${error.message}`);
+    } finally {
+      if (client) {
+        client.release();
+      }
     }
+  }
 
   static async updateQuantity(id, quantityChange) {
     let client;
     try {
       client = await pool.connect();
       const result = await client.query(
-          `UPDATE tickets
-           SET available_quantity = available_quantity + $1
-           WHERE id = $2
-             RETURNING *`,
-          [quantityChange, id]
+        `UPDATE tickets 
+        SET available_quantity = available_quantity + $1 
+        WHERE id = $2 
+        RETURNING *`,
+        [quantityChange, id]
       );
       if (result.rows.length === 0) {
         throw new Error('Ticket non trouvé');
@@ -161,7 +154,7 @@ class Ticket {
       if (result.rows.length === 0) {
         throw new Error('Ticket non trouvé');
       }
-      return result.rows[0];
+      return result.rows[0]; // Retourne le ticket trouvé
     } catch (error) {
       console.error('Erreur dans findById:', error);
       throw new Error(`Erreur lors de la récupération du ticket: ${error.message}`);
@@ -171,27 +164,6 @@ class Ticket {
       }
     }
   }
-
-  static async getPublicTickets(eventId) {
-    let client;
-    try {
-      client = await pool.connect();
-      const result = await client.query(
-          `SELECT * FROM tickets 
-         WHERE event_id = $1 
-         AND is_active = true 
-         AND available_quantity > 0
-         ORDER BY price ASC`,
-          [eventId]
-      );
-      return result.rows;
-    } catch (error) {
-      console.error('Erreur dans getPublicTickets:', error);
-      throw new Error(`Erreur lors de la récupération des tickets publics: ${error.message}`);
-    } finally {
-      if (client) client.release();
-    }
-  }
 }
 
-module.exports = Ticket;
+module.exports = Ticket; 

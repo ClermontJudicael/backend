@@ -7,7 +7,7 @@ const authRoutes = require("./authRoutes"); // Import authentication routes
 const userRoutes = require("./routes/userRoutes");
 const ticketRoutes = require("./routes/ticketRoutes");
 const reservationRoutes = require("./routes/reservationRoutes");
-
+const userReservationRoutes = require('./routes/userReservationRoutes');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -17,6 +17,7 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "Range"],
   exposedHeaders: ["Content-Range", "X-Total-Count"],
+  credentials: true
 }));
 
 app.use(express.json({ limit: "10mb" }));
@@ -44,6 +45,7 @@ app.use("/api/auth", authRoutes);  // ✅ Fix: Authentication routes are now reg
 app.use('/api/users', userRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/reservations', reservationRoutes);
+app.use('/api/user-reservations', userReservationRoutes);
 
 // Test route
 app.get("/api/ping", (req, res) => {
@@ -55,8 +57,6 @@ app.use((err, req, res, next) => {
   console.error(`[ERROR] ${err.message}`);
   res.status(err.status || 500).json({ error: err.message });
 });
-
-
 
 
 // Démarrer le serveur
