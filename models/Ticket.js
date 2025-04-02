@@ -105,33 +105,30 @@ class Ticket {
     }
   }
 
-  static async findByEventId(eventId) {
-    // Validation améliorée qui accepte les strings numériques
-    if (eventId === undefined || eventId === null || eventId === '') {
-      throw new Error('ID d\'événement non fourni');
-    }
+    static async findByEventId(eventId) {
+        const id = parseInt(eventId, 10);
+        if (isNaN(id)) {
+            throw new Error('ID doit être un nombre');
+        }
 
-    // Conversion plus souple
-    const parsedEventId = parseInt(eventId, 10);
-    if (isNaN(parsedEventId)) {
-      throw new Error('ID d\'événement doit être un nombre');
+        let client;
+        try {
+            client = await pool.connect();
+            const result = await client.query(
+                `SELECT * FROM tickets 
+             WHERE event_id = $1 
+             AND is_active = true 
+             AND available_quantity > 0`,
+                [id]
+            );
+            return result.rows;
+        } catch (error) {
+            console.error('Erreur DB:', error);
+            throw error;
+        } finally {
+            if (client) client.release();
+        }
     }
-
-    let client;
-    try {
-      client = await pool.connect();
-      const result = await client.query(
-          'SELECT * FROM tickets WHERE event_id = $1 AND is_active = true',
-          [parsedEventId]
-      );
-      return result.rows;
-    } catch (error) {
-      console.error('Erreur dans findByEventId:', error);
-      throw new Error(`Erreur lors de la récupération des tickets: ${error.message}`);
-    } finally {
-      if (client) client.release();
-    }
-  }
 
   static async updateQuantity(id, quantityChange) {
     let client;
