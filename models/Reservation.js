@@ -179,6 +179,30 @@ class Reservation {
     );
     return result.rows[0];
   }
+
+  static async confirmReservation(id) {
+    let client;
+    try {
+      client = await pool.connect();
+      // Only updates status, leaves other fields unchanged
+      const result = await client.query(
+        `UPDATE reservations 
+         SET status = 'confirmed', 
+             updated_at = CURRENT_TIMESTAMP 
+         WHERE id = $1 
+         RETURNING *`,
+        [id]
+      );
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error in confirmReservation:', error);
+      throw new Error(`Error confirming reservation: ${error.message}`);
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
+  }
   
 }
 

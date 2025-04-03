@@ -15,7 +15,7 @@ router.get("/my-reservations", authenticateToken, async (req, res) => {
   try {
     const reservations = await Reservation.getAllReservations({ 
       userId: req.user.id,
-      status: 'confirmed' // Only show confirmed reservations
+      // status: 'confirmed' // Only show confirmed reservations
     });
     
     if (!reservations || reservations.length === 0) {
@@ -41,6 +41,36 @@ router.get("/my-reservations", authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Error fetching user reservations:', error);
     res.status(500).json({ error: 'Failed to fetch reservations' });
+  }
+});
+
+// Confirm a pending reservation
+router.put("/:id/confirm", authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Verify reservation exists and belongs to user
+    const reservation = await Reservation.findById(id);
+    if (!reservation || reservation.user_id !== req.user.id) {
+      return res.status(404).json({ error: "Reservation not found" });
+    }
+
+    // Only allow confirming pending reservations
+    if (reservation.status !== 'pending') {
+      return res.status(400).json({ error: "Only pending reservations can be confirmed" });
+    }
+
+    // Use the new dedicated confirmation method
+    const updatedReservation = await Reservation.confirmReservation(id);
+
+    res.json(updatedReservation);
+  } catch (error) {
+    console.error('Error confirming reservation:', error);
+    res.status(500).json({ 
+      error: error.message.includes('confirming') 
+        ? error.message 
+        : 'Failed to confirm reservation' 
+    });
   }
 });
 
