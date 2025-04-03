@@ -46,18 +46,36 @@ class Ticket {
   }
   
 
-
   static async createTicket(ticketData) {
-    // Temporaire - à remplacer par requête SQL
-    const newTicket = {
-      id: tickets.length + 1,
-      ...ticketData,
-      is_active: ticketData.is_active !== undefined ? ticketData.is_active : true
-    };
-    
-    tickets.push(newTicket);
-    return newTicket;
-  }
+    let client;
+    try {
+        client = await pool.connect();
+        
+        // Préparez la requête d'insertion
+        const result = await client.query(
+            `INSERT INTO tickets (event_id, type, price, available_quantity, purchase_limit, is_active)
+             VALUES ($1, $2, $3, $4, $5, $6)
+             RETURNING *`,
+            [
+                ticketData.event_id,
+                ticketData.type,
+                ticketData.price,
+                ticketData.available_quantity,
+                ticketData.purchase_limit !== undefined ? ticketData.purchase_limit : 10, // Valeur par défaut
+                ticketData.is_active !== undefined ? ticketData.is_active : true // Valeur par défaut
+            ]
+        );
+
+        return result.rows[0]; // Retourne le ticket créé
+    } catch (error) {
+        console.error('Erreur dans createTicket:', error);
+        throw new Error(`Erreur lors de la création du ticket: ${error.message}`);
+    } finally {
+        if (client) client.release();
+    }
+}
+
+
 
   static async updateTicket(id, updatedTicket) {
     let client;

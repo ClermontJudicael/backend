@@ -57,7 +57,7 @@ const createTicket = async (req, res) => {
     }
 
     // Vérifier que l'événement existe
-    const event = await Event.findById(event_id); // Supposons que vous ayez cette méthode
+    const event = await Event.getEventById(event_id); // Supposons que vous ayez cette méthode
     if (!event) {
       return res.status(400).json({ message: 'Événement non trouvé' });
     }
