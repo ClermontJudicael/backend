@@ -171,6 +171,14 @@ class Reservation {
       }
     }
   }
+
+  static async updateStatus(id, status) {
+    const result = await pool.query(
+        'UPDATE reservations SET status = $1 WHERE id = $2 RETURNING *',
+        [status, id]
+    );
+    return result.rows[0];
+  }
   
 }
 

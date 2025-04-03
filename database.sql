@@ -71,7 +71,7 @@ CREATE TABLE reservations (
     user_id INTEGER NOT NULL REFERENCES users(id),
     ticket_id INTEGER NOT NULL REFERENCES tickets(id),
     quantity INTEGER NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'pending', -- 'pending', 'confirmed', 'canceled'
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
     payment_id VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

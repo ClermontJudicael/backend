@@ -22,45 +22,12 @@ router.get('/:id', authenticateToken, reservationController.getOneReservation);
 
 router.delete('/reservations/:id', authenticateToken, reservationController.cancelReservation);
 
-// Nouvelle route pour les réservations utilisateur
-router.get('/user/my', authenticateToken, async (req, res) => {
-    try {
-        const reservations = await pool.query(
-            `SELECT r.*, t.type as ticket_type, t.price, e.title as event_title
-       FROM reservations r
-       JOIN tickets t ON r.ticket_id = t.id
-       JOIN events e ON t.event_id = e.id
-       WHERE r.user_id = $1`,
-            [req.user.id]
-        );
+// route /my
+router.get('/my', authenticateToken, reservationController.getReservationsByUserId);
 
-        res.json(reservations.rows);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+router.post('/:id/pay', authenticateToken, reservationController.processPayment);
 
-// Route pour obtenir un reçu spécifique
-router.get('/receipts/:id', authenticateToken, async (req, res) => {
-    try {
-        const receipt = await pool.query(
-            `SELECT r.*, e.title as event_title, t.type as ticket_type
-       FROM receipts r
-       JOIN tickets t ON r.ticket_id = t.id
-       JOIN events e ON t.event_id = e.id
-       WHERE r.id = $1 AND r.user_id = $2`,
-            [req.params.id, req.user.id]
-        );
-
-        if (receipt.rows.length === 0) {
-            return res.status(404).json({ error: 'Reçu non trouvé' });
-        }
-
-        res.json(receipt.rows[0]);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+router.post('/', authenticateToken, reservationController.createReservation);
 
 module.exports = router; 
 
