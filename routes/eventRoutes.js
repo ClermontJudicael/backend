@@ -163,6 +163,7 @@ router.get('/:id/tickets', authenticateToken, ticketController.getTicketsByEvent
 // Routes pour les réservations d'un événement
 router.get('/:id/reservations', authenticateToken, reservationController.getReservationsByEventId);
 
+
 // Récupérer tous les événements avec filtres
 router.get('/', async (req, res) => {
   try {
@@ -291,5 +292,9 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 
 
 router.put('/:id', authenticateToken, eventController.updateEvent);
+
+
+// Route à ajouter
+router.get('/filter/by-status', eventController.getEventsByStatus);
 
 module.exports = router;

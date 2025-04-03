@@ -1,6 +1,7 @@
 const Event = require('../models/Event');
 const Ticket = require('../models/Ticket');
 
+
 // Liste de tous les événements
 const getAllEvents = async (req, res) => {
   try {
@@ -29,6 +30,49 @@ const getAllEvents = async (req, res) => {
   } catch (error) {
     console.error('Erreur dans getAllEvents:', error);
     res.status(500).json({ message: error.message });
+  }
+};
+
+// Liste des événements filtrés par statut (accès public)
+const getEventsByStatus = async (req, res) => {
+  try {
+    // Récupération des paramètres
+    const filters = {
+      ...(req.query.filter ? JSON.parse(req.query.filter) : {}),
+      ...req.query
+    };
+
+    // Pagination (React-Admin compatible)
+    const range = req.query.range ? JSON.parse(req.query.range) : [0, 9];
+    const [start, end] = range;
+    const perPage = end - start + 1;
+    const page = Math.floor(start / perPage) + 1;
+
+    // Filtrage automatique pour les non-admins/non-organizers/non-authentifiés
+    if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'organizer')) {
+      // On force le statut "published" pour les utilisateurs non privilégiés
+      filters.status = 'published';
+    } else if (!filters.status) {
+    }
+
+    // Appel à la méthode du modèle
+    const events = await Event.getEventsByStatus(filters);
+    const total = events.length;
+
+    // Gestion de la pagination
+    const paginatedEvents = events.slice(start, end + 1);
+    
+    // Headers pour React-Admin
+    res.set('Content-Range', `events ${start}-${Math.min(end, total - 1)}/${total}`);
+    res.set('X-Total-Count', total);
+    
+    res.json(paginatedEvents);
+  } catch (error) {
+    console.error('Erreur dans getEventsByStatus:', error);
+    res.status(500).json({ 
+      message: error.message,
+      ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
+    });
   }
 };
 // Détail d'un événement
@@ -186,6 +230,7 @@ const getEventTickets = async (req, res) => {
   }
 };
 
+
 module.exports = {
   getAllEvents,
   getEventById,
@@ -193,5 +238,6 @@ module.exports = {
   updateEvent,
   deleteEvent,
   getEventsByOrganizer,
-  getEventTickets
+  getEventTickets, 
+  getEventsByStatus
 };
