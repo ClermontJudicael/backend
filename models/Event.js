@@ -141,6 +141,7 @@ class Event {
       }
     }
   }
+  
   static async createEvent(eventData) {
     let client;
     try {
