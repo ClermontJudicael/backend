@@ -7,18 +7,20 @@ const authRoutes = require("./authRoutes"); // Import authentication routes
 const userRoutes = require("./routes/userRoutes");
 const ticketRoutes = require("./routes/ticketRoutes");
 const reservationRoutes = require("./routes/reservationRoutes");
-const userReservationRoutes = require('./routes/userReservationRoutes');
+const userReservationRoutes = require("./routes/userReservationRoutes");
 
 const app = express();
 const port = process.env.PORT || 5000;
 
-app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:5173"],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "Range"],
-  exposedHeaders: ["Content-Range", "X-Total-Count"],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: ["http://localhost:3000", "http://localhost:5173"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Range"],
+    exposedHeaders: ["Content-Range", "X-Total-Count"],
+    credentials: true,
+  })
+);
 
 app.use(express.json({ limit: "10mb" }));
 
@@ -30,11 +32,11 @@ app.use((req, res, next) => {
 
 // Register routes
 app.use("/api/events", eventRoutes);
-app.use("/api/auth", authRoutes);  // ✅ Fix: Authentication routes are now registered
-app.use('/api/users', userRoutes);
-app.use('/api/tickets', ticketRoutes);
-app.use('/api/reservations', reservationRoutes);
-app.use('/api/user-reservations', userReservationRoutes);
+app.use("/api/auth", authRoutes); // ✅ Fix: Authentication routes are now registered
+app.use("/api/users", userRoutes);
+app.use("/api/tickets", ticketRoutes);
+app.use("/api/reservations", reservationRoutes);
+app.use("/api/user-reservations", userReservationRoutes);
 
 // Test route
 app.get("/api/ping", (req, res) => {
@@ -47,13 +49,13 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ error: err.message });
 });
 
-
 // Démarrer le serveur
 app.listen(port, () => {
   console.log(`\nServer running on http://localhost:${port}`);
-  console.log('Available routes:');
+  console.log("Available routes:");
   console.log(`- GET    /api/ping`);
   console.log(`- GET    /api/events`);
+  console.log(`- GET    /api/events/last-date`);
   console.log(`- POST   /api/events`);
   console.log(`- PUT    /api/events/:id`);
   console.log(`- DELETE /api/events/:id\n`);

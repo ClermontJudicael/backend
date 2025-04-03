@@ -151,9 +151,10 @@ VALUES
 -- Données initiales pour les événements
 INSERT INTO events (title, description, date, location, category, image_url, organizer_id, is_published)
 VALUES
-    ('Concert de Jazz', 'UnPOST /api/auth/admin/login
- concert de jazz avec les meilleurs musiciens locaux', '2024-06-15 19:00:00', 'Salle Apollo, Paris', 'Musique', '/images/jazz.jpg', 2, TRUE),
-    ('Exposition d''Art Moderne', 'Découvrez les œuvres d''artistes contemporains', '2024-07-10 10:00:00', 'Galerie Moderna, Lyon', 'Art', '/images/art.jpg', 2, TRUE);
+    ('Concert de Jazz', 'UnPOST /api/auth/admin/login concert de jazz avec les meilleurs musiciens locaux', '2024-06-15 19:00:00', 'Salle Apollo, Paris', 'Musique', '/images/jazz.jpg', 2, TRUE),
+    ('Exposition d''Art Moderne', 'Découvrez les œuvres d''artistes contemporains', '2024-07-10 10:00:00', 'Galerie Moderna, Lyon', 'Art', '/images/art.jpg', 2, TRUE),
+    ('Festival de jazz de Paris 2025', 'UnPOST /api/auth/admin/login concert de jazz avec les meilleurs musiciens locaux', '2025-07-10 12:00:00', 'Galerie Moderna, Lyon', 'Art', '/images/jazz2025.jpg', 2, TRUE);
+
 
 -- Données initiales pour les tickets
 INSERT INTO tickets (event_id, type, price, available_quantity, purchase_limit)
