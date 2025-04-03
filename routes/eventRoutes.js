@@ -88,7 +88,6 @@ router.post(
 // Récupérer tous les événements avec filtres
 router.get("/last-date", async (req, res) => {
   try {
-    console.log("aaaaaaaaaaaaaaaaaa");
     const events = await Event.getLastDateEvents();
     console.log("Événements trouvés:", events);
 
@@ -216,7 +215,7 @@ router.get("/", async (req, res) => {
 
     console.log("Filtres traités:", filters);
     const events = await Event.getAllEvents(filters);
-    console.log("Événements trouvés:", events);
+    console.log("Événements trouvés filter:", events);
 
     // Définir l'en-tête Content-Range
     res.set("Content-Range", `events 0-${events.length - 1}/${events.length}`);
