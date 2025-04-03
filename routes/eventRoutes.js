@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Event = require('../models/Event');
 const multer = require('multer');
+const upload = require('../config/multerConfig');
 const path = require('path');
 const fs = require('fs');
 const ticketController = require('../controllers/ticketController');
@@ -13,6 +14,7 @@ const eventController = require('../controllers/eventController');
 // Vérifiez si ticketController est bien importé
 console.log('ticketController:', ticketController);
 
+/*
 // Configuration de Multer pour gérer les uploads d'images
 const uploadDir = path.join(__dirname, '../images/events');
 if (!fs.existsSync(uploadDir)) {
@@ -29,6 +31,7 @@ const storage = multer.diskStorage({
     cb(null, file.fieldname + '-' + uniqueSuffix + ext);
   }
 });
+
 
 const upload = multer({
   storage: storage,
@@ -79,6 +82,7 @@ router.post('/:id/image', authenticateToken, upload.single('image'), async (req,
     res.status(500).json({ message: error.message });
   }
 });
+*/
 
 // Récupérer un événement spécifique par son ID
 router.get('/:id', async (req, res) => {
@@ -195,15 +199,17 @@ router.get('/', async (req, res) => {
 
 
 // Créer un événement
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, upload.single('image') ,async (req, res) => {
   try {
+    console.log('Fichier reçu:', req.file); // <-- Ajout important
+    console.log('Corps de la requête:', req.body);
     // Vérification des rôles
     if (req.user.role !== 'admin' && req.user.role !== 'organizer') {
       return res.status(403).json({ message: 'Non autorisé' });
     }
 
     // Validation des données
-    const { title, description, date, location, category } = req.body;
+    const { title, description, date, location, category, status, image_alt } = req.body;
     if (!title || !date || !location || !category) {
       return res.status(400).json({ message: 'Tous les champs obligatoires sont requis' });
     }
@@ -215,6 +221,9 @@ router.post('/', authenticateToken, async (req, res) => {
       date,
       location,
       category,
+      status,
+      image_url: req.file ? `http://localhost:5000/uploads/${req.file.filename}` : null,
+      image_alt: image_alt || null,
       organizer_id: req.user.role === 'organizer' ? req.user.id : req.body.organizer_id
     };
 
@@ -222,8 +231,10 @@ router.post('/', authenticateToken, async (req, res) => {
     const newEvent = await Event.createEvent(eventData);
 
     // Réponse avec la structure attendue
+    console.log("Réponse envoyée au frontend :", { data: newEvent });
     res.status(201).json({ data: newEvent });
   } catch (error) {
+    console.error('Erreur complète:', error);
     console.error('Erreur dans la création d\'événement:', error);
     res.status(500).json({ message: error.message });
   }

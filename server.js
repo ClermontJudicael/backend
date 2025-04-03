@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const eventRoutes = require("./routes/eventRoutes");
+const path = require('path'); // Ajoute cette ligne en haut de ton fichier server.js
 
 const authRoutes = require("./authRoutes"); // Import authentication routes
 const userRoutes = require("./routes/userRoutes");
@@ -59,6 +60,9 @@ app.use((err, req, res, next) => {
   console.error(`[ERROR] ${err.message}`);
   res.status(err.status || 500).json({ error: err.message });
 });
+
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 // Démarrer le serveur

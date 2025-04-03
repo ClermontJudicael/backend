@@ -133,6 +133,7 @@ const createEvent = async (req, res) => {
     console.log('Événement créé:', newEvent); // Log de l'événement créé
 
     // Réponse avec la structure attendue
+    console.log('Événement créé:', newEvent);
     res.status(201).json({ data: newEvent });
   } catch (error) {
     console.error('Erreur dans createEvent:', error);
