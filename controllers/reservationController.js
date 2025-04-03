@@ -312,7 +312,7 @@ const createReservation = async (req, res) => {
 
     // Mettre à jour la quantité disponible
     const newQuantity = ticket.available_quantity - quantity;
-    await Ticket.updateTicketQuantity(ticketId, newQuantity);
+    await Ticket.updateQuantity(ticketId, newQuantity);
 
     res.status(201).json({
       success: true,
