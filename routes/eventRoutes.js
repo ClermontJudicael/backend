@@ -157,7 +157,7 @@ console.log('getTicketsByEventId:', ticketController.getTicketsByEventId); // V�
 if (typeof ticketController.getTicketsByEventId !== 'function') {
     throw new Error('getTicketsByEventId is not a function');
 }
-router.get('/:id/tickets', authenticateToken, ticketController.getTicketsByEventId);
+router.get('/:eventId/tickets', authenticateToken, ticketController.getTicketsByEventId);
 
 
 // Routes pour les réservations d'un événement

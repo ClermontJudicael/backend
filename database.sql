@@ -158,6 +158,7 @@ VALUES
 -- Données initiales pour les tickets
     INSERT INTO tickets (event_id, type, price, available_quantity, purchase_limit)
     VALUES
+        (1, 'Early Bird', 30.00, 200, 10),
         (1, 'VIP', 100.00, 50, 2),
         (1, 'Standard', 50.00, 100, 5),
         (2, 'Early Bird', 30.00, 200, 10);
@@ -191,7 +192,6 @@ VALUES
 
 INSERT INTO reservations (user_id, ticket_id, quantity, status)
 VALUES
-    (8, 1, 1, 'confirmed');
     (8, 1, 1, 'confirmed');
 
 
