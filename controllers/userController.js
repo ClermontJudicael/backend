@@ -4,7 +4,7 @@ const User = require('../models/User');
 // Liste de tous les utilisateurs
 const getAllUsers = async (req, res) => {
   try {
-      console.log('Requête reçue avec les filtres:', req.query); // Log des filtres reçus
+      console.log('Requête reçue avec les filtres:', req.query);
 
       if (req.user.role !== 'admin') {
           return res.status(403).json({ message: 'Non autorisé. Rôle d\'administrateur requis.' });
@@ -12,11 +12,39 @@ const getAllUsers = async (req, res) => {
 
       // Analyser le filtre
       const filters = req.query.filter ? JSON.parse(req.query.filter) : {};
-      console.log('Filtres analysés:', filters); // Log des filtres analysés
+      console.log('Filtres analysés:', filters);
 
-      const users = await User.getAllUsers(filters); // Passer les filtres analysés
-      res.set('Content-Range', `users 0-${users.length-1}/${users.length}`);
-      res.set('X-Total-Count', users.length);
+      // Gestion de la pagination (compatible avec React-Admin)
+      let page = 1;
+      let perPage = 10;
+      
+      if (req.query.range) {
+          // Format React-Admin: range=[0,4] => 5 éléments (indices 0 à 4 inclus)
+          const [start, end] = JSON.parse(req.query.range);
+          perPage = end - start + 1;
+          page = Math.floor(start / perPage) + 1;
+      } else {
+          // Fallback pour une pagination classique
+          page = parseInt(req.query.page) || 1;
+          perPage = parseInt(req.query.perPage) || 10;
+      }
+
+      // Validation des paramètres
+      if (page < 1 || perPage < 1) {
+          return res.status(400).json({ 
+              message: 'Les paramètres de pagination doivent être des nombres positifs.' 
+          });
+      }
+
+      const users = await User.getAllUsers(filters, page, perPage);
+      const totalUsers = await User.countUsers(filters);
+
+      // Calcul des indices pour Content-Range
+      const firstItemIndex = (page - 1) * perPage;
+      const lastItemIndex = firstItemIndex + users.length - 1;
+
+      res.set('Content-Range', `users ${firstItemIndex}-${lastItemIndex}/${totalUsers}`);
+      res.set('X-Total-Count', totalUsers);
       res.json(users);
   } catch (error) {
       console.error('Erreur dans getAllUsers:', error);

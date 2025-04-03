@@ -17,6 +17,17 @@ router.get('/confirmed', authenticateToken, reservationController.getConfirmedRe
 
 // Annuler une réservation
 router.put('/:id/cancel', authenticateToken, reservationController.cancelReservation);
+// Récupérer une réservation spécifique (GET /api/reservations/:id)
+router.get('/:id', authenticateToken, reservationController.getOneReservation);
+
+router.delete('/reservations/:id', authenticateToken, reservationController.cancelReservation);
+
+// route /my
+router.get('/my', authenticateToken, reservationController.getReservationsByUserId);
+
+router.post('/:id/pay', authenticateToken, reservationController.processPayment);
+
+router.post('/', authenticateToken, reservationController.createReservation);
 
 module.exports = router; 
 

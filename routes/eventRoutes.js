@@ -1,16 +1,20 @@
 const express = require("express");
 const router = express.Router();
-const Event = require("../models/Event");
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
-const ticketController = require("../controllers/ticketController");
-const reservationController = require("../controllers/reservationController");
-const { authenticateToken } = require("../authMiddleware");
+const Event = require('../models/Event');
+const multer = require('multer');
+const upload = require('../config/multerConfig');
+const path = require('path');
+const fs = require('fs');
+const ticketController = require('../controllers/ticketController');
+const reservationController = require('../controllers/reservationController');
+const { authenticateToken } = require('../authMiddleware');
+const eventController = require('../controllers/eventController');
+
 
 // Vérifiez si ticketController est bien importé
 console.log("ticketController:", ticketController);
 
+/*
 // Configuration de Multer pour gérer les uploads d'images
 const uploadDir = path.join(__dirname, "../images/events");
 if (!fs.existsSync(uploadDir)) {
@@ -27,6 +31,7 @@ const storage = multer.diskStorage({
     cb(null, file.fieldname + "-" + uniqueSuffix + ext);
   },
 });
+
 
 const upload = multer({
   storage: storage,
@@ -83,9 +88,9 @@ router.post(
       res.status(500).json({ message: error.message });
     }
   }
-);
+);*/
 
-// Récupérer tous les événements avec filtres
+// Récupérer les 6 derniers events
 router.get("/last-date", async (req, res) => {
   try {
     const events = await Event.getLastDateEvents();
@@ -103,6 +108,7 @@ router.get("/last-date", async (req, res) => {
     });
   }
 });
+
 // Récupérer un événement spécifique par son ID
 router.get("/:id", async (req, res) => {
   try {
@@ -116,17 +122,6 @@ router.get("/:id", async (req, res) => {
       });
     }
 
-    // Si l'événement est en brouillon, vérifier les permissions
-    if (event.status === "draft") {
-      if (
-        !req.user ||
-        (req.user.role !== "admin" && event.organizer_id !== req.user.id)
-      ) {
-        return res.status(403).json({
-          message: "Accès non autorisé à cet événement en brouillon",
-        });
-      }
-    }
 
     // Ajoute les headers cohérents avec vos autres endpoints
     res.set("Content-Range", `events 0-1/1`);
@@ -143,6 +138,11 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+
+
+
+
+/*
 // Route pour changer le statut d'un événement
 router.put("/:id/status", authenticateToken, async (req, res) => {
   try {
@@ -182,17 +182,15 @@ router.put("/:id/status", authenticateToken, async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+*/
 
 // Routes pour les tickets d'un événement
 console.log("getTicketsByEventId:", ticketController.getTicketsByEventId); // Vérifiez ici
 if (typeof ticketController.getTicketsByEventId !== "function") {
   throw new Error("getTicketsByEventId is not a function");
 }
-router.get(
-  "/:id/tickets",
-  authenticateToken,
-  ticketController.getTicketsByEventId
-);
+router.get('/:eventId/tickets', authenticateToken, ticketController.getTicketsByEventId);
+
 
 // Routes pour les réservations d'un événement
 router.get(
@@ -200,6 +198,7 @@ router.get(
   authenticateToken,
   reservationController.getReservationsByEventId
 );
+
 
 // Récupérer tous les événements avec filtres
 router.get("/", async (req, res) => {
@@ -230,23 +229,50 @@ router.get("/", async (req, res) => {
   }
 });
 
+
 // Créer un événement
-router.post("/", authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, upload.single('image') ,async (req, res) => {
   try {
-    if (req.user.role !== "admin" && req.user.role !== "organizer") {
-      return res.status(403).json({ message: "Non autorisé" });
+    console.log('Fichier reçu:', req.file); // <-- Ajout important
+    console.log('Corps de la requête:', req.body);
+    // Vérification des rôles
+    if (req.user.role !== 'admin' && req.user.role !== 'organizer') {
+      return res.status(403).json({ message: 'Non autorisé' });
     }
 
-    // Créer un nouvel événement
-    // Vous devrez ajouter une méthode createEvent dans votre modèle Event
+    // Validation des données
+    const { title, description, date, location, category, status, image_alt } = req.body;
+    if (!title || !date || !location || !category) {
+      return res.status(400).json({ message: 'Tous les champs obligatoires sont requis' });
+    }
 
-    res.status(201).json({ message: "Création d'événement à implémenter" });
+    // Ajout de l'organizer_id si c'est un organizer qui crée
+    const eventData = {
+      title,
+      description,
+      date,
+      location,
+      category,
+      status,
+      image_url: req.file ? `http://localhost:5000/uploads/${req.file.filename}` : null,
+      image_alt: image_alt || null,
+      organizer_id: req.user.role === 'organizer' ? req.user.id : req.body.organizer_id
+    };
+
+    // Appel à la méthode createEvent du modèle
+    const newEvent = await Event.createEvent(eventData);
+
+    // Réponse avec la structure attendue
+    console.log("Réponse envoyée au frontend :", { data: newEvent });
+    res.status(201).json({ data: newEvent });
   } catch (error) {
-    console.error("Erreur dans la création d'événement:", error);
+    console.error('Erreur complète:', error);
+    console.error('Erreur dans la création d\'événement:', error);
     res.status(500).json({ message: error.message });
   }
 });
 
+/*
 // Modifier un événement
 router.put("/:id", authenticateToken, async (req, res) => {
   try {
@@ -277,6 +303,7 @@ router.put("/:id", authenticateToken, async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+*/
 
 // Supprimer un événement
 router.delete("/:id", authenticateToken, async (req, res) => {
@@ -300,13 +327,21 @@ router.delete("/:id", authenticateToken, async (req, res) => {
     }
 
     // Supprimer l'événement
-    // Vous devrez ajouter une méthode deleteEvent dans votre modèle Event
+    await Event.deleteEvent(eventId); // Appeler la méthode de suppression
 
-    res.status(204).send();
+    // Répondre avec un statut 204 No Content
+    res.status(204).send(); // Pas de contenu à renvoyer
   } catch (error) {
     console.error("Erreur dans la suppression d'événement:", error);
     res.status(500).json({ message: error.message });
   }
 });
+
+
+router.put('/:id', authenticateToken, eventController.updateEvent);
+
+
+// Route à ajouter
+router.get('/filter/by-status', eventController.getEventsByStatus);
 
 module.exports = router;

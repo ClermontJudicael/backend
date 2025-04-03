@@ -4,18 +4,27 @@ const Ticket = require("../models/Ticket");
 // Liste de tous les événements
 const getAllEvents = async (req, res) => {
   try {
-    // Autorisation: tout le monde peut voir les événements publiés
-    const filter = { ...req.query };
+    // Récupération des paramètres
+    const filters = {
+      ...(req.query.filter ? JSON.parse(req.query.filter) : {}),
+      ...req.query,
+    };
 
-    // Si ce n'est pas un admin/organizer, on ne montre que les événements publiés
+    // Pagination (React-Admin compatible)
+    const range = req.query.range ? JSON.parse(req.query.range) : [0, 9];
+    const [start, end] = range;
+    const perPage = end - start + 1;
+    const page = Math.floor(start / perPage) + 1;
+
+    // Filtrage automatique pour les non-admins
     if (req.user.role !== "admin" && req.user.role !== "organizer") {
-      filter.is_published = true;
+      filters.is_published = true;
     }
 
-    const events = await Event.getAllEvents(filter);
+    const { events, total } = await Event.getAllEvents(filters, page, perPage);
 
-    res.set("Content-Range", `events 0-${events.length - 1}/${events.length}`);
-    res.set("X-Total-Count", events.length);
+    res.set("Content-Range", `events ${start}-${end}/${total}`);
+    res.set("X-Total-Count", total);
     res.json(events);
   } catch (error) {
     console.error("Erreur dans getAllEvents:", error);
@@ -37,6 +46,54 @@ const getRecentEvent = async (req, res) => {
   }
 };
 
+// Liste des événements filtrés par statut (accès public)
+const getEventsByStatus = async (req, res) => {
+  try {
+    // Récupération des paramètres
+    const filters = {
+      ...(req.query.filter ? JSON.parse(req.query.filter) : {}),
+      ...req.query,
+    };
+
+    // Pagination (React-Admin compatible)
+    const range = req.query.range ? JSON.parse(req.query.range) : [0, 9];
+    const [start, end] = range;
+    const perPage = end - start + 1;
+    const page = Math.floor(start / perPage) + 1;
+
+    // Filtrage automatique pour les non-admins/non-organizers/non-authentifiés
+    if (
+      !req.user ||
+      (req.user.role !== "admin" && req.user.role !== "organizer")
+    ) {
+      // On force le statut "published" pour les utilisateurs non privilégiés
+      filters.status = "published";
+    } else if (!filters.status) {
+    }
+
+    // Appel à la méthode du modèle
+    const events = await Event.getEventsByStatus(filters);
+    const total = events.length;
+
+    // Gestion de la pagination
+    const paginatedEvents = events.slice(start, end + 1);
+
+    // Headers pour React-Admin
+    res.set(
+      "Content-Range",
+      `events ${start}-${Math.min(end, total - 1)}/${total}`
+    );
+    res.set("X-Total-Count", total);
+
+    res.json(paginatedEvents);
+  } catch (error) {
+    console.error("Erreur dans getEventsByStatus:", error);
+    res.status(500).json({
+      message: error.message,
+      ...(process.env.NODE_ENV === "development" && { stack: error.stack }),
+    });
+  }
+};
 // Détail d'un événement
 const getEventById = async (req, res) => {
   try {
@@ -58,7 +115,16 @@ const getEventById = async (req, res) => {
         .json({ message: "Accès non autorisé à cet événement" });
     }
 
-    res.json(event);
+    // AJOUT: Récupération des tickets associés à l'événement
+    const tickets = await Ticket.findByEventId(eventId); // Supposant que cette méthode existe dans votre modèle Ticket
+
+    // AJOUT: Fusion des données de l'événement avec les tickets
+    const responseData = {
+      ...event,
+      tickets: tickets || [], // Retourne un tableau vide si aucun ticket
+    };
+
+    res.json(responseData);
   } catch (error) {
     console.error("Erreur dans getEventById:", error);
     res.status(500).json({ message: error.message });
@@ -68,7 +134,7 @@ const getEventById = async (req, res) => {
 // Créer un nouvel événement
 const createEvent = async (req, res) => {
   try {
-    // Seuls admin et organizer peuvent créer des événements
+    // Vérification des rôles
     if (req.user.role !== "admin" && req.user.role !== "organizer") {
       return res
         .status(403)
@@ -83,26 +149,32 @@ const createEvent = async (req, res) => {
         .json({ message: "Tous les champs obligatoires sont requis" });
     }
 
-    // Ajout de l'organizer_id si c'est un organizer qui crée
+    // Ajout de l'organizer_id
     const eventData = {
       ...req.body,
       organizer_id:
         req.user.role === "organizer" ? req.user.id : req.body.organizer_id,
     };
 
+    console.log("Données de l'événement à créer:", eventData); // Log des données à créer
+
     const newEvent = await Event.createEvent(eventData);
-    res.status(201).json(newEvent);
+
+    console.log("Événement créé:", newEvent); // Log de l'événement créé
+
+    // Réponse avec la structure attendue
+    console.log("Événement créé:", newEvent);
+    res.status(201).json({ data: newEvent });
   } catch (error) {
     console.error("Erreur dans createEvent:", error);
     res.status(500).json({ message: error.message });
   }
 };
 
-// Modifier un événement
 const updateEvent = async (req, res) => {
   try {
     const eventId = parseInt(req.params.id);
-    const event = await Event.findById(eventId);
+    const event = await Event.getEventById(eventId);
 
     if (!event) {
       return res.status(404).json({ message: "Événement non trouvé" });
@@ -119,13 +191,19 @@ const updateEvent = async (req, res) => {
     }
 
     const updatedEvent = await Event.updateEvent(eventId, req.body);
-    res.json(updatedEvent);
+
+    // LOG CRITIQUE - Vérifiez les données avant envoi
+    console.log("🟢 [Controller] Données avant envoi:", {
+      originalData: updatedEvent,
+      formattedData: { data: updatedEvent },
+    });
+
+    res.json({ data: updatedEvent });
   } catch (error) {
     console.error("Erreur dans updateEvent:", error);
     res.status(500).json({ message: error.message });
   }
 };
-
 // Supprimer un événement
 const deleteEvent = async (req, res) => {
   try {
@@ -177,6 +255,18 @@ const getEventsByOrganizer = async (req, res) => {
   }
 };
 
+// recupere les tickets dans une evenements
+const getEventTickets = async (req, res) => {
+  try {
+    const eventId = parseInt(req.params.id);
+    const tickets = await Ticket.findByEventId(eventId);
+    res.json(tickets);
+  } catch (error) {
+    console.error("Erreur dans getEventTickets:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getAllEvents,
   getRecentEvent,
@@ -185,4 +275,6 @@ module.exports = {
   updateEvent,
   deleteEvent,
   getEventsByOrganizer,
+  getEventTickets,
+  getEventsByStatus,
 };

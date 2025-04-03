@@ -19,49 +19,53 @@ const { Pool } = require("pg");
  });
  
  class User {
-   static async getAllUsers(filters = {}) {
-     let client;
-     try {
-         console.log('Méthode getAllUsers appelée avec les filtres:', filters);
- 
-         client = await pool.connect();
-         let query = 'SELECT * FROM users WHERE 1=1'; 
-         const values = [];
- 
-         // Filtre de recherche par tous les champs
-         if (filters.q && filters.q !== 'null') {
-             const searchValue = `%${filters.q}%`;
-             query += ' AND (username ILIKE $' + (values.length + 1) + 
-                      ' OR email ILIKE $' + (values.length + 2) + 
-                      
-                      ' OR role ILIKE $' + (values.length + 3) + ')'; 
-             values.push(searchValue, searchValue, searchValue);
-         }
- 
-         // Filtre par rôle
-         if (filters.role) {
-             query += ' AND role = $' + (values.length + 1);
-             values.push(filters.role);
-         }
- 
-         query += ' ORDER BY id ASC'; 
- 
-         console.log('Query SQL:', query);
-         console.log('Values:', values);
- 
-         const result = await client.query(query, values);
-         console.log('Résultat de la requête:', result.rows);
- 
-         return result.rows;
-     } catch (error) {
-         console.error('Erreur dans getAllUsers:', error);
-         throw new Error(`Erreur lors de la récupération des utilisateurs: ${error.message}`);
-     } finally {
-         if (client) {
-             client.release();
-         }
-     }
- }
+  static async getAllUsers(filters = {}, page, perPage) {
+    let client;
+    try {
+        console.log('Méthode getAllUsers appelée avec les filtres:', filters);
+
+        client = await pool.connect();
+        let query = 'SELECT * FROM users WHERE 1=1'; 
+        const values = [];
+
+        // Filtre de recherche par tous les champs
+        if (filters.q && filters.q !== 'null') {
+            const searchValue = `%${filters.q}%`;
+            query += ' AND (username ILIKE $' + (values.length + 1) + 
+                     ' OR email ILIKE $' + (values.length + 2) + 
+                     ' OR role ILIKE $' + (values.length + 3) + ')'; 
+            values.push(searchValue, searchValue, searchValue);
+        }
+
+        // Filtre par rôle
+        if (filters.role) {
+            query += ' AND role = $' + (values.length + 1);
+            values.push(filters.role);
+        }
+
+        // Pagination
+        const offset = (page - 1) * perPage;
+        query += ' ORDER BY id ASC LIMIT $' + (values.length + 1) + ' OFFSET $' + (values.length + 2);
+        values.push(perPage, offset);
+
+        console.log('Query SQL:', query);
+        console.log('Values:', values);
+
+        const result = await client.query(query, values);
+        console.log('Résultat de la requête:', result.rows);
+
+        return result.rows;
+    } catch (error) {
+        console.error('Erreur dans getAllUsers:', error);
+        throw new Error(`Erreur lors de la récupération des utilisateurs: ${error.message}`);
+    } finally {
+        if (client) {
+            client.release();
+        }
+    }
+}
+
+
  
  
    static async findById(id) {
@@ -173,6 +177,41 @@ const { Pool } = require("pg");
      }
    }
  }
+
+ static async countUsers(filters = {}) {
+  let client;
+  try {
+      client = await pool.connect();
+      let query = 'SELECT COUNT(*) FROM users WHERE 1=1'; 
+      const values = [];
+
+      // Filtre de recherche par tous les champs
+      if (filters.q && filters.q !== 'null') {
+          const searchValue = `%${filters.q}%`;
+          query += ' AND (username ILIKE $' + (values.length + 1) + 
+                   ' OR email ILIKE $' + (values.length + 2) +
+                   ' OR role ILIKE $' + (values.length + 3) + ')'; 
+                   values.push(searchValue, searchValue, searchValue);
+               }
+       
+               // Filtre par rôle
+               if (filters.role) {
+                   query += ' AND role = $' + (values.length + 1);
+                   values.push(filters.role);
+               }
+       
+               const result = await client.query(query, values);
+               return parseInt(result.rows[0].count); // Retourne le nombre total d'utilisateurs
+           } catch (error) {
+               console.error('Erreur dans countUsers:', error);
+               throw new Error(`Erreur lors du comptage des utilisateurs: ${error.message}`);
+           } finally {
+               if (client) {
+                   client.release();
+               }
+           }
+       }
+       
  }
  
  

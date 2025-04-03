@@ -107,6 +107,71 @@ class Event {
     }
   }
 
+  static async getEventsByStatus(filters = {}) {
+    let client;
+    try {
+      console.log(
+        "Méthode getEventsByStatus appelée avec les filtres:",
+        filters
+      );
+
+      client = await pool.connect();
+      let query = "SELECT * FROM events WHERE 1=1";
+      const values = [];
+
+      // Filtre principal par statut
+      if (filters.status && filters.status !== "null") {
+        query += " AND status = $" + (values.length + 1);
+        values.push(filters.status);
+      }
+
+      // Filtres supplémentaires optionnels
+      if (filters.date && filters.date !== "null") {
+        query += " AND date >= $" + (values.length + 1);
+        values.push(filters.date);
+      }
+
+      if (filters.location && filters.location !== "null") {
+        query += " AND location ILIKE $" + (values.length + 1);
+        values.push(`%${filters.location}%`);
+      }
+
+      if (filters.category && filters.category !== "null") {
+        query += " AND category = $" + (values.length + 1);
+        values.push(filters.category);
+      }
+
+      if (filters.search && filters.search !== "null") {
+        query +=
+          " AND (title ILIKE $" +
+          (values.length + 1) +
+          " OR description ILIKE $" +
+          (values.length + 1) +
+          ")";
+        values.push(`%${filters.search}%`);
+      }
+
+      query += " ORDER BY date ASC";
+
+      console.log("Query SQL:", query);
+      console.log("Values:", values);
+
+      const result = await client.query(query, values);
+      console.log("Résultat de la requête:", result.rows);
+
+      return result.rows;
+    } catch (error) {
+      console.error("Erreur dans getEventsByStatus:", error);
+      throw new Error(
+        `Erreur lors de la récupération des événements par statut: ${error.message}`
+      );
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
+  }
+
   static async getEventById(id) {
     let client;
     try {
@@ -132,7 +197,7 @@ class Event {
   static async createEvent(eventData) {
     let client;
     try {
-      console.log("Méthode createEvent appelée avec les données:", eventData);
+      console.log("Méthode createEvent appelée avec les données:", eventData); // Log des données reçues
       client = await pool.connect();
 
       const {
@@ -161,11 +226,11 @@ class Event {
         image_alt || null,
       ];
 
-      console.log("Query SQL:", query);
-      console.log("Values:", values);
+      console.log("Query SQL:", query); // Log de la requête SQL
+      console.log("Values:", values); // Log des valeurs envoyées
 
       const result = await client.query(query, values);
-      console.log("Événement créé:", result.rows[0]);
+      console.log("Résultat de la création d'événement:", result.rows[0]); // Log du résultat de la requête
 
       return result.rows[0];
     } catch (error) {
@@ -223,7 +288,11 @@ class Event {
       console.log("Values:", values);
 
       const result = await client.query(query, values);
-      console.log("Événement mis à jour:", result.rows[0]);
+      // LOG CRITIQUE - Vérifiez ce que PostgreSQL retourne vraiment
+      console.log("🔵 [Model] Résultat PostgreSQL brut:", result.rows[0]);
+      if (!result.rows[0]?.id) {
+        console.error("❌ [Model] Aucun ID trouvé dans le résultat!");
+      }
 
       return result.rows[0];
     } catch (error) {

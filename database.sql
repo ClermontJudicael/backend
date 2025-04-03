@@ -71,7 +71,7 @@ CREATE TABLE reservations (
     user_id INTEGER NOT NULL REFERENCES users(id),
     ticket_id INTEGER NOT NULL REFERENCES tickets(id),
     quantity INTEGER NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'pending', -- 'pending', 'confirmed', 'canceled'
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
     payment_id VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -157,11 +157,12 @@ VALUES
 
 
 -- Données initiales pour les tickets
-INSERT INTO tickets (event_id, type, price, available_quantity, purchase_limit)
-VALUES
-    (1, 'VIP', 100.00, 50, 2),
-    (1, 'Standard', 50.00, 100, 5),
-    (2, 'Early Bird', 30.00, 200, 10);
+    INSERT INTO tickets (event_id, type, price, available_quantity, purchase_limit)
+    VALUES
+        (1, 'Early Bird', 30.00, 200, 10),
+        (1, 'VIP', 100.00, 50, 2),
+        (1, 'Standard', 50.00, 100, 5),
+        (2, 'Early Bird', 30.00, 200, 10);
 
 -- Données initiales pour les réservations
 INSERT INTO reservations (user_id, ticket_id, quantity, status)
@@ -192,4 +193,26 @@ VALUES
 
 INSERT INTO reservations (user_id, ticket_id, quantity, status)
 VALUES
-    (8, 1, 1, 'confirmed'); 
+    (8, 1, 1, 'confirmed');
+
+
+
+    -- New insert
+
+INSERT INTO users (username, email, password, role)
+VALUES
+    ('AliceMartin', 'martin@example.com', '$2a$12$hjTctolv.A6yoqCUHaRUEOKKw9cWppKFTsQk9fxgi4eky4vQUBT1G', 'admin'),  -- Mot de passe: Admin123!
+    ('ThomasDurand', 'thomas.durand@example.com', '$2a$12$g.3L2bWCBQCr28/y4TBtu.w2RG8O06i2kuY7zoxcq1u2TB.L2LBWe', 'organizer'),  -- Mot de passe: Durand2024!
+    ('CamilleLemoine', 'camille.lemoine@example.com', '$2a$12$zbnvYZEDkS4SpGCTZ.AileAvaZ4lnxFObqnFljgvZHAW.K5tPn696', 'organizer'),  -- Mot de passe: CamilleLemoine007*
+    ('LucasBernard', 'lucas.bernard@example.com', '$2a$12$SR6btWXHMnElYxkhbQ7ppeZwsJw/U8BSHf7U9eXxeIaYGiGuHSRYS', 'user'),  -- Mot de passe: Bernard123!
+    ('EmmaRousseau', 'emma.rousseau@example.com', '$2a$12$il5vdXDizn415grHBA5kqO5dvAJuYmi5WAuJZBwfaJAX69LJVJlLy', 'user'),  -- Mot de passe: roussO007*
+    ('HugoMorel', 'hugo.morel@example.com', '$2a$12$Ru3DIbwzEAoB.HUZfqAGuuX42CabwO6lfgd3ppDq4Yy6Gt/T6mCFS', 'user'),  -- Mot de passe: HugoMorel1234
+    ('SophieLefevre', 'sophie.lefevre@example.com', '$2a$12$TqyEY4MfuhNw74XFd8d6LuKG9laGLhhWqvCxxHXZHuIqrdsJ2PhbW', 'user'),  -- Mot de passe: PapillonLefevre*
+    ('MathieuPerrin', 'mathieu.perrin@example.com', '$2a$12$g2OY/xF4MEHB5C0jAKNh2OUzH6KDMc7sFRDt4hM/bep5d0HfanPQC', 'user'),  -- Mot de passe: PerrinM1414
+    ('JulietteSimon', 'juliette.simon@example.com', '$2a$12$4uI5mlL1/pO8cN5xNx661OJKt5N9.oKCpOW3XTnmsWBMLwya1YKSy', 'user'),  -- Mot de passe: BelleJulieta0*
+    ('NathanDubois', 'nathan.dubois@example.com', '$2a$12$uVciKQmK6DoIiwgdMYkA9uFFTRWuOhOrP7SXWYe8lJPDM.w9mulPW', 'user');  -- Mot de passe: nathantDubois1234
+
+
+
+-- New alter table for events, add "status"
+ALTER TABLE events ADD COLUMN status VARCHAR(20) DEFAULT 'draft';

@@ -156,18 +156,18 @@ const getTicketsForEvent = async (req, res) => {
 // Liste des tickets pour un événement spécifique
 const getTicketsByEventId = async (req, res) => {
   try {
-    const eventId = parseInt(req.params.id); 
-    const tickets = await Ticket.findByEventId(eventId); 
+    const eventId = parseInt(req.params.eventId);
+    const tickets = await Ticket.findByEventId(eventId);
 
     if (!tickets || tickets.length === 0) {
-      return res.status(404).json({ message: 'Aucun ticket trouvé pour cet événement' });
+      return res.status(404).json({ message: 'Aucun ticket disponible' });
     }
 
-    res.set('Content-Range', `tickets 0-${tickets.length - 1}/${tickets.length}`);
-    res.set('X-Total-Count', tickets.length);
-    res.json(tickets);
+    // Option : Filtrer les tickets non disponibles si nécessaire
+    const availableTickets = tickets.filter(ticket => ticket.available_quantity > 0);
+
+    res.json(availableTickets);
   } catch (error) {
-    console.error('Erreur dans getTicketsByEventId:', error);
     res.status(500).json({ message: error.message });
   }
 };

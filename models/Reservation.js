@@ -152,6 +152,33 @@ class Reservation {
       }
     }
   }
+
+  static async cancelReservation(id) {
+    let client;
+    try {
+      client = await pool.connect();
+      const result = await client.query(
+        'UPDATE reservations SET status = $1 WHERE id = $2 RETURNING *',
+        ['canceled', id] // Changez le statut à 'canceled'
+      );
+      return result.rows[0]; // Retourne la réservation annulée
+    } catch (error) {
+      console.error('Erreur dans cancelReservation:', error);
+      throw new Error(`Erreur lors de l'annulation de la réservation: ${error.message}`);
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
+  }
+
+  static async updateStatus(id, status) {
+    const result = await pool.query(
+        'UPDATE reservations SET status = $1 WHERE id = $2 RETURNING *',
+        [status, id]
+    );
+    return result.rows[0];
+  }
   
 }
 

@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const eventRoutes = require("./routes/eventRoutes");
+const path = require("path"); // Ajoute cette ligne en haut de ton fichier server.js
 
 const authRoutes = require("./authRoutes"); // Import authentication routes
 const userRoutes = require("./routes/userRoutes");
@@ -15,14 +16,27 @@ const port = process.env.PORT || 5000;
 app.use(
   cors({
     origin: ["http://localhost:3000", "http://localhost:5173"],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Range"],
-    exposedHeaders: ["Content-Range", "X-Total-Count"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization", "Range", "Accept"],
+    exposedHeaders: ["Content-Range", "X-Total-Count", "Authorization"],
     credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   })
 );
 
 app.use(express.json({ limit: "10mb" }));
+
+// Ajoutez ce middleware pour debugger les requêtes JSON (à placer LIGNE 24)
+app.use((req, res, next) => {
+  if (req.originalUrl === "/api/auth/login" && req.method === "POST") {
+    console.log("Body reçu:", req.body); // Debug spécifique pour /login
+    if (!req.body.email || !req.body.password) {
+      return res.status(400).json({ error: "Email et mot de passe requis" });
+    }
+  }
+  next();
+});
 
 // Logging middleware
 app.use((req, res, next) => {
@@ -48,6 +62,8 @@ app.use((err, req, res, next) => {
   console.error(`[ERROR] ${err.message}`);
   res.status(err.status || 500).json({ error: err.message });
 });
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Démarrer le serveur
 app.listen(port, () => {
