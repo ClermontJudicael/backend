@@ -3,6 +3,8 @@ const router = express.Router();
 const Reservation = require("../models/Reservation");
 const { authenticateToken } = require("../authMiddleware");
 const { Pool } = require("pg");
+const Receipts = require('../models/Receipts'); // Import your Receipts model
+const { v4: uuidv4 } = require('uuid'); // For QR code generation (or use a real library)
 
 // Create a new pool instance
 const pool = new Pool({
@@ -56,7 +58,7 @@ router.get("/my-reservations", authenticateToken, async (req, res) => {
 router.put("/:id/confirm", authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Verify reservation exists and belongs to user
     const reservation = await Reservation.findById(id);
     if (!reservation || reservation.user_id !== req.user.id) {
@@ -68,10 +70,32 @@ router.put("/:id/confirm", authenticateToken, async (req, res) => {
       return res.status(400).json({ error: "Only pending reservations can be confirmed" });
     }
 
-    // Use the new dedicated confirmation method
+    // Update reservation status
     const updatedReservation = await Reservation.confirmReservation(id);
-    
-    res.json(updatedReservation);
+
+    // Get ticket info to calculate price
+    const ticketResult = await pool.query("SELECT * FROM tickets WHERE id = $1", [reservation.ticket_id]);
+    const ticket = ticketResult.rows[0];
+
+    // Generate QR code (can be a UUID or use a real QR lib)
+    const qrCode = uuidv4();
+
+    // Create receipt
+    // Create receipt
+    const receipt = await Receipts.create({
+      reservationId: id, // <-- This is essential
+      userId: req.user.id,
+      ticketId: reservation.ticket_id,
+      qrCode,
+      amount: ticket.price * reservation.quantity,
+      paymentMethod: 'credit_card',
+      paymentStatus: 'completed'
+    });
+
+    res.json({
+      reservation: updatedReservation,
+      receipt
+    });
   } catch (error) {
     console.error('Error confirming reservation:', error);
     res.status(500).json({ 
@@ -81,5 +105,7 @@ router.put("/:id/confirm", authenticateToken, async (req, res) => {
     });
   }
 });
+
+
 
 module.exports = router;

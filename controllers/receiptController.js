@@ -39,12 +39,21 @@ exports.getReceiptById = async (req, res) => {
 exports.getReceiptsByUser = async (req, res) => {
     try {
         const { userId } = req.params;
+        console.log(`Fetching receipts for user ${userId}`); // Debugging line
         const { rows } = await pool.query(
             'SELECT * FROM receipts WHERE user_id = $1 ORDER BY issued_at DESC',
             [userId]
         );
-        res.json(rows);
+        console.log(`Received rows:`, rows); // Debugging line
+        
+        if (rows.length === 0) {
+            console.log(`No receipts found for user ${userId}`); // Debugging line
+            return res.status(404).json({ error: 'No receipts found for this user' });
+        }
+        
+        res.json(rows); // Send the receipts data back
     } catch (error) {
+        console.error('Error fetching receipts:', error);
         res.status(500).json({ error: error.message });
     }
 };

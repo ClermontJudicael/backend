@@ -1,3 +1,7 @@
 2025-03-25T20:14:26.608Z [error]: TypeError: Cannot read properties of undefined (reading 'error')
     at C:\Users\Mendrika Razafindrat\Desktop\backend\config\database.js:39:16
     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-04-04T11:01:12.593Z [error]: Erreur de requête:
+2025-04-04T11:03:34.367Z [error]: Erreur de requête:
+2025-04-04T11:05:22.257Z [error]: Erreur de requête:
+2025-04-04T11:08:35.125Z [error]: Erreur de requête:
