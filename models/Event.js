@@ -85,7 +85,7 @@ class Event {
     try {
       client = await pool.connect();
       let query =
-        "SELECT * FROM events WHERE 1=1 and is_published = true ORDER BY DATE DESC limit 6";
+        "SELECT * FROM events WHERE 1=1 and is_published = true OR status = 'published' ORDER BY DATE DESC limit 6";
       const values = [];
 
       console.log("Query SQL:", query);
