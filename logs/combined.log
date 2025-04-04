@@ -125,3 +125,11 @@
 2025-04-04T11:55:49.435Z [info]: Nouvelle connexion DB établie
 2025-04-04T11:55:49.446Z [debug]: Requête exécutée (21ms): INSERT INTO receipts 
             (reservation_id,...
+2025-04-04T11:58:22.956Z [info]: Nouvelle connexion DB établie
+2025-04-04T11:58:22.970Z [info]: ✅ Connecté à PostgreSQL:
+2025-04-04T12:02:54.869Z [info]: Nouvelle connexion DB établie
+2025-04-04T12:02:54.877Z [debug]: Requête exécutée (24ms): INSERT INTO receipts 
+            (reservation_id,...
+2025-04-04T12:06:40.491Z [info]: Nouvelle connexion DB établie
+2025-04-04T12:06:40.501Z [debug]: Requête exécutée (25ms): INSERT INTO receipts 
+            (reservation_id,...
