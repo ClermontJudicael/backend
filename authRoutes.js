@@ -53,15 +53,26 @@ router.post("/login", async (req, res) => {
 
     // Include email in the JWT payload
     const token = jwt.sign(
-      { id: user.rows[0].id, username: user.rows[0].username, email: user.rows[0].email }, // Add email to the payload
+      { 
+        id: user.rows[0].id, 
+        username: user.rows[0].username, 
+        email: user.rows[0].email,
+        role: user.rows[0].role // Add this line
+      },
       SECRET_KEY,
       { expiresIn: "1h" }
     );
 
     res.json({
       token,
-      user: { id: user.rows[0].id, email: user.rows[0].email, username: user.rows[0].username }
+      user: { 
+        id: user.rows[0].id, 
+        email: user.rows[0].email, 
+        username: user.rows[0].username,
+        role: user.rows[0].role // Add this
+      }
     });
+    
   } catch (err) {
     res.status(500).json({ error: "Login failed" });
   }

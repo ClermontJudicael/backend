@@ -12,11 +12,16 @@ const pool = new Pool({
 
 // Get reservations for the logged-in user
 router.get("/my-reservations", authenticateToken, async (req, res) => {
+  console.log("Authenticated user:", req.user); // Should show role
+  console.log("User ID:", req.user.id); // Should match DB
+
   try {
     const reservations = await Reservation.getAllReservations({ 
       userId: req.user.id,
       // status: 'confirmed' // Only show confirmed reservations
     });
+
+    console.log("DB Query Results:", reservations);
     
     if (!reservations || reservations.length === 0) {
       return res.json([]);
@@ -38,6 +43,9 @@ router.get("/my-reservations", authenticateToken, async (req, res) => {
     }));
 
     res.json(populatedReservations);
+    
+    console.log("RESERVATION OF USER"+reservations);
+
   } catch (error) {
     console.error('Error fetching user reservations:', error);
     res.status(500).json({ error: 'Failed to fetch reservations' });
@@ -62,7 +70,7 @@ router.put("/:id/confirm", authenticateToken, async (req, res) => {
 
     // Use the new dedicated confirmation method
     const updatedReservation = await Reservation.confirmReservation(id);
-
+    
     res.json(updatedReservation);
   } catch (error) {
     console.error('Error confirming reservation:', error);
