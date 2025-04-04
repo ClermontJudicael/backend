@@ -242,7 +242,7 @@ const processPayment = async (req, res) => {
       reservation_id: reservationId,
       user_id: reservation.user_id,
       ticket_id: reservation.ticket_id,
-      qr_code: `qr-${reservationId}-${Date.now()}`, // À remplacer par une vraie génération de QR code
+      qr_code: `qr-${reservationId}-${Date.now()}`, // À remplacer par une vraie génération de QR
       amount: ticket.price * reservation.quantity,
       payment_method: paymentMethod,
       payment_status: 'completed'
