@@ -121,7 +121,7 @@ const { get } = require('../authRoutes');
      });
  
      // Comptez le nombre total de réservations confirmées
-     const totalConfirmed = await Reservation.countReservations({ status: 'confirmed' });
+     const totalConfirmed = await Reservation.countReservations({ status: 'pending' });
  
      // Définissez l'en-tête Content-Range
      res.set('Content-Range', `reservations ${(page - 1) * perPage}-${(page * perPage) - 1}/${totalConfirmed}`);
@@ -231,7 +231,7 @@ const processPayment = async (req, res) => {
     }
 
     // 3. Confirmer la réservation
-    const updatedReservation = await Reservation.updateStatus(reservationId, 'confirmed');
+    const updatedReservation = await Reservation.updateStatus(reservationId, 'pending');
 
     // 4. Récupérer les détails du ticket et de l'événement
     const ticket = await Ticket.findById(reservation.ticket_id);
